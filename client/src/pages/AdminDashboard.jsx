@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import Navbar from "../components/Navbar";
+import ConfirmModal from "../components/ConfirmModal";
 
 function AdminDashboard() {
     const [activeTab, setActiveTab] = useState("teams"); // 'teams' | 'controls' | 'r1g2_arena' | 'content'
@@ -34,7 +35,17 @@ function AdminDashboard() {
     // Tech Cards Assignment State
     const [cardsCatalog, setCardsCatalog] = useState([]);
     const [selectedCardName, setSelectedCardName] = useState("");
-    const [cardMarketValue, setCardMarketValue] = useState("100");
+    const [cardBoughtValue, setCardBoughtValue] = useState("70");
+    const [cardMarketValue, setCardMarketValue] = useState("70");
+
+    // Tech Card CRUD State (Content Manager)
+    const [editingTechCard, setEditingTechCard] = useState(null);
+    const [techCardForm, setTechCardForm] = useState({
+        name: "",
+        basePrice: 70,
+        totalCount: 4,
+        description: "",
+    });
 
     // R5 Auction & Defense State
     const [problemCatalog, setProblemCatalog] = useState([]);
@@ -47,6 +58,42 @@ function AdminDashboard() {
     const [questions, setQuestions] = useState([]);
     const [editingImageSetNumber, setEditingImageSetNumber] = useState(1);
     const [editableImageSet, setEditableImageSet] = useState(null);
+
+    // Styled Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        itemHighlight: "",
+        confirmText: "Delete",
+        confirmType: "danger",
+        onConfirm: () => {},
+    });
+
+    const triggerConfirm = ({
+        title = "Confirm Action",
+        message = "Are you sure you want to proceed? This action cannot be undone.",
+        itemHighlight = "",
+        confirmText = "Delete",
+        confirmType = "danger",
+        onConfirm,
+    }) => {
+        setConfirmModal({
+            isOpen: true,
+            title,
+            message,
+            itemHighlight,
+            confirmText,
+            confirmType,
+            onConfirm: async () => {
+                try {
+                    await onConfirm();
+                } finally {
+                    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                }
+            },
+        });
+    };
 
     // New Question Form State
     const [newQuestion, setNewQuestion] = useState({
@@ -88,7 +135,7 @@ function AdminDashboard() {
             }
             if (cardsData.cards?.length > 0 && !selectedCardName) {
                 setSelectedCardName(cardsData.cards[0].name);
-                setCardMarketValue(cardsData.cards[0].marketValue);
+                setCardMarketValue(cardsData.cards[0].basePrice !== undefined ? cardsData.cards[0].basePrice : cardsData.cards[0].marketValue);
             }
             if (probData.statements?.length > 0 && !selectedProblemTitle) {
                 setSelectedProblemTitle(probData.statements[0].title);
@@ -222,7 +269,7 @@ function AdminDashboard() {
     };
 
     // -------------------------------------------------------------
-    // TECH CARD ASSIGNMENT
+    // TECH CARD ASSIGNMENT & REMOVAL
     // -------------------------------------------------------------
     const handleAssignCard = async (e) => {
         e.preventDefault();
@@ -232,20 +279,32 @@ function AdminDashboard() {
             setMessage("");
 
             const existingCards = [...(selectedTeam.techCards || [])];
+
+            // Prevent duplicate card names on team
+            if (existingCards.some((c) => c.name?.trim().toLowerCase() === selectedCardName?.trim().toLowerCase())) {
+                setError(`Team "${selectedTeam.teamName}" already possesses "${selectedCardName}". Duplicate cards are not allowed.`);
+                setActionLoading(false);
+                return;
+            }
+
             const selectedCardObj = cardsCatalog.find((c) => c.name === selectedCardName);
+            const baseVal = selectedCardObj ? (selectedCardObj.basePrice !== undefined ? selectedCardObj.basePrice : selectedCardObj.marketValue) : 50;
 
             existingCards.push({
                 name: selectedCardName,
-                basePrice: selectedCardObj ? selectedCardObj.basePrice : 50,
+                basePrice: Number(baseVal),
+                boughtPrice: Number(cardBoughtValue),
                 marketValue: Number(cardMarketValue),
                 category: selectedCardObj ? selectedCardObj.category : "Hardware / Software",
             });
 
-            await api.assignTechCards({
+            const res = await api.assignTechCards({
                 teamId: selectedTeam._id,
                 techCards: existingCards,
             });
-            setMessage(`Assigned ${selectedCardName} (🪙 ${cardMarketValue}) to ${selectedTeam.teamName}!`);
+
+            setSelectedTeam(res.team);
+            setMessage(`Assigned ${selectedCardName} (Bought: 🪙 ${cardBoughtValue} | Market: 🪙 ${cardMarketValue}) to ${selectedTeam.teamName}!`);
             setCardModalOpen(false);
             await loadAllData();
         } catch (err) {
@@ -253,6 +312,38 @@ function AdminDashboard() {
         } finally {
             setActionLoading(false);
         }
+    };
+
+    const handleRemoveCardFromTeam = (teamId, cardIndex, cardName) => {
+        triggerConfirm({
+            title: "Remove Tech Card from Team",
+            message: `Are you sure you want to remove this Tech Card from team "${selectedTeam?.teamName}"? The team's Tech Coins and ranking will be automatically recalculated.`,
+            itemHighlight: cardName,
+            confirmText: "Remove Card",
+            confirmType: "danger",
+            onConfirm: async () => {
+                try {
+                    setActionLoading(true);
+                    setError("");
+                    setMessage("");
+
+                    const currentCards = (selectedTeam.techCards || []).filter((_, idx) => idx !== cardIndex);
+
+                    const res = await api.assignTechCards({
+                        teamId: teamId,
+                        techCards: currentCards,
+                    });
+
+                    setSelectedTeam(res.team);
+                    setMessage(`Removed "${cardName}" from ${selectedTeam.teamName}. Tech coins & ranks updated!`);
+                    await loadAllData();
+                } catch (err) {
+                    setError(err.message || "Failed to remove card from team");
+                } finally {
+                    setActionLoading(false);
+                }
+            },
+        });
     };
 
     // -------------------------------------------------------------
@@ -336,18 +427,163 @@ function AdminDashboard() {
         }
     };
 
-    const handleDeleteQuestion = async (id) => {
-        if (!window.confirm("Are you sure you want to delete this question?")) return;
+    // Delete Confirmation State
+    const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+    const confirmDeleteQuestion = async () => {
+        if (!deleteConfirmId) return;
         try {
             setActionLoading(true);
-            await api.deleteQuestion(id);
-            setMessage("Question deleted");
+            await api.deleteQuestion(deleteConfirmId);
+            setMessage("Question deleted successfully!");
+            setDeleteConfirmId(null);
             await loadAllData();
         } catch (err) {
-            setError(err.message || "Failed to delete");
+            setError(err.message || "Failed to delete question");
         } finally {
             setActionLoading(false);
         }
+    };
+
+    // -------------------------------------------------------------
+    // TECH CARD CRUD (Content Manager)
+    // -------------------------------------------------------------
+    const handleSaveTechCard = async (e) => {
+        e.preventDefault();
+        try {
+            setActionLoading(true);
+            setError("");
+            setMessage("");
+
+            const payload = {
+                id: editingTechCard?._id,
+                name: techCardForm.name.trim(),
+                basePrice: Number(techCardForm.basePrice),
+                marketValue: editingTechCard ? Number(editingTechCard.marketValue || techCardForm.basePrice) : Number(techCardForm.basePrice),
+                totalCount: Number(techCardForm.totalCount || 4),
+                description: techCardForm.description.trim(),
+            };
+
+            await api.saveTechCard(payload);
+
+            setMessage(
+                editingTechCard
+                    ? `Tech Card "${techCardForm.name}" updated successfully!`
+                    : `Tech Card "${techCardForm.name}" created successfully!`
+            );
+
+            setEditingTechCard(null);
+            setTechCardForm({
+                name: "",
+                basePrice: 70,
+                totalCount: 4,
+                description: "",
+            });
+
+            await loadAllData();
+        } catch (err) {
+            setError(err.message || "Failed to save Tech Card");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleEditTechCard = (card) => {
+        setEditingTechCard(card);
+        setTechCardForm({
+            name: card.name,
+            basePrice: card.basePrice !== undefined ? card.basePrice : card.marketValue || 70,
+            totalCount: card.totalCount !== undefined ? card.totalCount : 4,
+            description: card.description || "",
+        });
+        setContentSubTab("cards");
+        // Smooth scroll to top of content area
+        window.scrollTo({ top: 300, behavior: "smooth" });
+    };
+
+    const handleCancelEditTechCard = () => {
+        setEditingTechCard(null);
+        setTechCardForm({
+            name: "",
+            basePrice: 70,
+            totalCount: 4,
+            description: "",
+        });
+    };
+
+    const handleDeleteTechCard = (id, name) => {
+        triggerConfirm({
+            title: "Delete Tech Card",
+            message: "Are you sure you want to permanently delete this Tech Card from the catalog? It will no longer be available in Round 2 live auctions.",
+            itemHighlight: name,
+            confirmText: "Delete Tech Card",
+            confirmType: "danger",
+            onConfirm: async () => {
+                try {
+                    setActionLoading(true);
+                    setError("");
+                    setMessage("");
+                    await api.deleteTechCard(id);
+                    setMessage(`Tech Card "${name}" deleted successfully!`);
+                    if (editingTechCard?._id === id) {
+                        handleCancelEditTechCard();
+                    }
+                    await loadAllData();
+                } catch (err) {
+                    setError(err.message || "Failed to delete Tech Card");
+                } finally {
+                    setActionLoading(false);
+                }
+            },
+        });
+    };
+
+    const handleDeleteQuestion = (id, questionText) => {
+        triggerConfirm({
+            title: "Delete Question",
+            message: "Are you sure you want to permanently delete this competition question?",
+            itemHighlight: questionText,
+            confirmText: "Delete Question",
+            confirmType: "danger",
+            onConfirm: async () => {
+                try {
+                    setActionLoading(true);
+                    setError("");
+                    setMessage("");
+                    await api.deleteQuestion(id);
+                    setMessage("Question deleted successfully!");
+                    await loadAllData();
+                } catch (err) {
+                    setError(err.message || "Failed to delete question");
+                } finally {
+                    setActionLoading(false);
+                }
+            },
+        });
+    };
+
+    const handleDeleteProblemStatement = (id, title) => {
+        triggerConfirm({
+            title: "Delete Problem Statement",
+            message: "Are you sure you want to permanently delete this problem statement from the Round 5 catalog?",
+            itemHighlight: title,
+            confirmText: "Delete Statement",
+            confirmType: "danger",
+            onConfirm: async () => {
+                try {
+                    setActionLoading(true);
+                    setError("");
+                    setMessage("");
+                    await api.deleteProblemStatement(id);
+                    setMessage(`Problem statement "${title}" deleted successfully!`);
+                    await loadAllData();
+                } catch (err) {
+                    setError(err.message || "Failed to delete problem statement");
+                } finally {
+                    setActionLoading(false);
+                }
+            },
+        });
     };
 
     if (loading && !settings) {
@@ -519,6 +755,11 @@ function AdminDashboard() {
                                             justifyContent: "space-between",
                                             border: t.rank === 1 ? "1px solid rgba(255, 215, 0, 0.4)" : "1px solid rgba(255, 255, 255, 0.08)",
                                             boxShadow: t.rank === 1 ? "0 0 25px rgba(255, 215, 0, 0.12)" : "none",
+                                            cursor: "pointer",
+                                        }}
+                                        onClick={() => {
+                                            setSelectedTeam(t);
+                                            setDetailsModalOpen(true);
                                         }}
                                     >
                                         <div>
@@ -628,6 +869,17 @@ function AdminDashboard() {
                                                 <button
                                                     onClick={() => {
                                                         setSelectedTeam(t);
+                                                        const available = cardsCatalog.filter(
+                                                            (c) => !(t.techCards || []).some((tc) => tc.name?.trim().toLowerCase() === c.name?.trim().toLowerCase())
+                                                        );
+                                                        const target = available.length > 0 ? available[0] : (cardsCatalog[0] || null);
+                                                        if (target) {
+                                                            setSelectedCardName(target.name);
+                                                            const bVal = target.basePrice !== undefined ? target.basePrice : 50;
+                                                            const mVal = target.marketValue !== undefined ? target.marketValue : bVal;
+                                                            setCardBoughtValue(bVal);
+                                                            setCardMarketValue(mVal);
+                                                        }
                                                         setCardModalOpen(true);
                                                     }}
                                                     className="btn-secondary"
@@ -1477,8 +1729,8 @@ function AdminDashboard() {
                                                             {q.question}
                                                         </div>
                                                     </div>
-                                                    <button onClick={() => handleDeleteQuestion(q._id)} className="btn-danger" style={{ padding: "6px 12px", fontSize: "11px" }}>
-                                                        Delete
+                                                    <button onClick={() => handleDeleteQuestion(q._id, q.question)} className="btn-danger" style={{ padding: "6px 12px", fontSize: "11px" }}>
+                                                        🗑️ Delete
                                                     </button>
                                                 </div>
                                             ))}
@@ -1489,19 +1741,210 @@ function AdminDashboard() {
 
                         {/* SUBTAB 5: TECH CARDS */}
                         {contentSubTab === "cards" && (
-                            <div className="glass-card" style={{ padding: "28px" }}>
-                                <h3 style={{ fontSize: "18px", marginBottom: "16px" }}>Tech Cards Catalog</h3>
-                                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "14px" }}>
-                                    {cardsCatalog.map((c) => (
-                                        <div key={c._id} style={{ padding: "16px", borderRadius: "10px", background: "rgba(255, 215, 0, 0.05)", border: "1px solid rgba(255, 215, 0, 0.2)" }}>
-                                            <div style={{ fontSize: "11px", color: "var(--accent-gold)", fontWeight: "700" }}>{c.category}</div>
-                                            <strong style={{ fontSize: "15px", color: "#fff", display: "block", marginTop: "4px" }}>{c.name}</strong>
-                                            <div style={{ marginTop: "8px", fontSize: "13px", display: "flex", justifyContent: "space-between" }}>
-                                                <span style={{ color: "var(--text-dim)" }}>Market Value:</span>
-                                                <span style={{ color: "#ffd700", fontWeight: "700" }}>🪙 {c.marketValue}</span>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                                {/* Form for Creating / Editing Tech Card */}
+                                <div className="glass-card" style={{ padding: "28px" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", flexWrap: "wrap", gap: "10px" }}>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                            <span className="badge badge-gold">ROUND 2 AUCTION</span>
+                                            <h3 style={{ fontSize: "18px", margin: 0 }}>
+                                                {editingTechCard ? "✏️ Edit Tech Card" : "➕ Create New Tech Card"}
+                                            </h3>
+                                        </div>
+                                        {editingTechCard && (
+                                            <button
+                                                type="button"
+                                                onClick={handleCancelEditTechCard}
+                                                className="btn-secondary"
+                                                style={{ padding: "6px 14px", fontSize: "12px" }}
+                                            >
+                                                ✕ Cancel Edit
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <form onSubmit={handleSaveTechCard} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
+                                            <div>
+                                                <label style={{ fontSize: "12px", color: "var(--text-dim)", display: "block", marginBottom: "6px" }}>
+                                                    Card Name *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. Solid-State LiDAR 360"
+                                                    value={techCardForm.name}
+                                                    onChange={(e) => setTechCardForm({ ...techCardForm, name: e.target.value })}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: "12px", color: "var(--text-dim)", display: "block", marginBottom: "6px" }}>
+                                                    Base Value (🪙 Tech Coins) *
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="e.g. 70"
+                                                    min="0"
+                                                    value={techCardForm.basePrice}
+                                                    onChange={(e) => setTechCardForm({ ...techCardForm, basePrice: e.target.value })}
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: "12px", color: "var(--text-dim)", display: "block", marginBottom: "6px" }}>
+                                                    Total Card Quantity (Stock) *
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    placeholder="e.g. 4"
+                                                    min="1"
+                                                    value={techCardForm.totalCount}
+                                                    onChange={(e) => setTechCardForm({ ...techCardForm, totalCount: e.target.value })}
+                                                    required
+                                                />
                                             </div>
                                         </div>
-                                    ))}
+
+                                        <div>
+                                            <label style={{ fontSize: "12px", color: "var(--text-dim)", display: "block", marginBottom: "6px" }}>
+                                                Description / Specifications (Optional)
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder="Brief overview or hardware specification..."
+                                                value={techCardForm.description}
+                                                onChange={(e) => setTechCardForm({ ...techCardForm, description: e.target.value })}
+                                            />
+                                        </div>
+
+                                        <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+                                            <button type="submit" className="btn-primary" disabled={actionLoading} style={{ padding: "10px 24px" }}>
+                                                {actionLoading ? "Saving..." : editingTechCard ? "Update Tech Card →" : "Create Tech Card →"}
+                                            </button>
+                                            {editingTechCard && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCancelEditTechCard}
+                                                    className="btn-secondary"
+                                                    style={{ padding: "10px 18px" }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                            )}
+                                        </div>
+                                    </form>
+                                </div>
+
+                                {/* Existing Tech Cards Catalog Grid */}
+                                <div className="glass-card" style={{ padding: "28px" }}>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
+                                        <div>
+                                            <h3 style={{ fontSize: "18px", margin: 0 }}>Tech Cards Catalog</h3>
+                                            <span style={{ fontSize: "12px", color: "var(--text-dim)" }}>
+                                                Baseline assets for Round 2 live auction. Market value automatically updates when allotted to teams. Count decreases on allotment.
+                                            </span>
+                                        </div>
+                                        <span className="badge badge-gold">{cardsCatalog.length} Total Cards</span>
+                                    </div>
+
+                                    {cardsCatalog.length === 0 ? (
+                                        <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--text-muted)", background: "rgba(255,255,255,0.02)", borderRadius: "12px" }}>
+                                            🎴 No Tech Cards in catalog yet. Use the form above to create one!
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+                                            {cardsCatalog.map((c) => {
+                                                const totalStock = c.totalCount !== undefined ? c.totalCount : 4;
+                                                const allottedTeamsCount = (teams || []).reduce((acc, t) => {
+                                                    const hasCard = (t.techCards || []).some((tc) => tc.name?.trim() === c.name?.trim());
+                                                    return hasCard ? acc + 1 : acc;
+                                                }, 0);
+                                                const remaining = c.remainingCount !== undefined ? c.remainingCount : Math.max(0, totalStock - allottedTeamsCount);
+
+                                                return (
+                                                    <div
+                                                        key={c._id}
+                                                        style={{
+                                                            padding: "20px",
+                                                            borderRadius: "12px",
+                                                            background: "rgba(255, 215, 0, 0.04)",
+                                                            border: editingTechCard?._id === c._id ? "1px solid var(--accent-gold)" : "1px solid rgba(255, 215, 0, 0.18)",
+                                                            display: "flex",
+                                                            flexDirection: "column",
+                                                            justifyContent: "space-between",
+                                                            boxShadow: editingTechCard?._id === c._id ? "0 0 15px rgba(255, 215, 0, 0.2)" : "none",
+                                                            transition: "all 0.2s ease",
+                                                        }}
+                                                    >
+                                                        <div>
+                                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+                                                                <span className={remaining > 0 ? "badge badge-emerald" : "badge badge-rose"} style={{ fontSize: "11px", fontWeight: "700" }}>
+                                                                    {remaining > 0 ? `📦 ${remaining} / ${totalStock} Available` : `🚫 0 / ${totalStock} Left (Sold Out)`}
+                                                                </span>
+                                                                {allottedTeamsCount > 0 && (
+                                                                    <span style={{ fontSize: "11px", color: "var(--text-dim)", fontWeight: "600" }}>
+                                                                        {allottedTeamsCount} Allotted
+                                                                    </span>
+                                                                )}
+                                                            </div>
+
+                                                            <strong style={{ fontSize: "16px", color: "#fff", display: "block", marginBottom: "6px" }}>
+                                                                {c.name}
+                                                            </strong>
+
+                                                            {c.description && (
+                                                                <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "0 0 10px 0", lineHeight: 1.5 }}>
+                                                                    {c.description}
+                                                                </p>
+                                                            )}
+
+                                                            <div style={{
+                                                                marginTop: "12px",
+                                                                padding: "10px 14px",
+                                                                background: "rgba(255, 255, 255, 0.03)",
+                                                                borderRadius: "10px",
+                                                                display: "flex",
+                                                                flexDirection: "column",
+                                                                gap: "6px",
+                                                            }}>
+                                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
+                                                                    <span style={{ color: "var(--text-dim)" }}>Base Value:</span>
+                                                                    <span style={{ color: "var(--text-main)", fontWeight: "700", fontFamily: "var(--font-mono)" }}>
+                                                                        🪙 {c.basePrice !== undefined ? c.basePrice : c.marketValue}
+                                                                    </span>
+                                                                </div>
+                                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
+                                                                    <span style={{ color: "var(--accent-gold)", fontWeight: "600" }}>Market Value:</span>
+                                                                    <span style={{ color: "#ffd700", fontWeight: "900", fontSize: "15px", fontFamily: "var(--font-mono)" }}>
+                                                                        🪙 {c.marketValue !== undefined ? c.marketValue : c.basePrice}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div style={{ display: "flex", gap: "8px", marginTop: "16px", paddingTop: "12px", borderTop: "1px solid rgba(255, 255, 255, 0.06)" }}>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleEditTechCard(c)}
+                                                                className="btn-secondary"
+                                                                style={{ flex: 1, padding: "7px 10px", fontSize: "12px", fontWeight: "600" }}
+                                                            >
+                                                                ✏️ Edit
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteTechCard(c._id, c.name)}
+                                                                className="btn-danger"
+                                                                style={{ padding: "7px 14px", fontSize: "12px", fontWeight: "600" }}
+                                                            >
+                                                                🗑️ Delete
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -1513,9 +1956,18 @@ function AdminDashboard() {
                                 <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                                     {problemCatalog.map((p) => (
                                         <div key={p._id} style={{ padding: "18px", borderRadius: "12px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
-                                            <div style={{ fontSize: "12px", color: "var(--primary)", fontWeight: "700" }}>CHALLENGE #{p.statementNumber} • {p.category}</div>
-                                            <h4 style={{ fontSize: "16px", color: "#fff", margin: "6px 0" }}>{p.title}</h4>
-                                            <p style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.6 }}>{p.description}</p>
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px", marginBottom: "6px" }}>
+                                                <div style={{ fontSize: "12px", color: "var(--primary)", fontWeight: "700" }}>CHALLENGE #{p.statementNumber} • {p.category}</div>
+                                                <button
+                                                    onClick={() => handleDeleteProblemStatement(p._id, p.title)}
+                                                    className="btn-danger"
+                                                    style={{ padding: "4px 10px", fontSize: "11px" }}
+                                                >
+                                                    🗑️ Delete
+                                                </button>
+                                            </div>
+                                            <h4 style={{ fontSize: "16px", color: "#fff", margin: "0 0 6px 0" }}>{p.title}</h4>
+                                            <p style={{ fontSize: "13px", color: "var(--text-muted)", lineHeight: 1.6, margin: 0 }}>{p.description}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -1639,11 +2091,45 @@ function AdminDashboard() {
                             <h4 style={{ fontSize: "14px", color: "var(--primary)", textTransform: "uppercase", marginBottom: "8px" }}>
                                 Tech Cards Possessed ({selectedTeam.techCards?.length || 0})
                             </h4>
-                            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                                 {selectedTeam.techCards?.length > 0 ? (
                                     selectedTeam.techCards.map((c, idx) => (
-                                        <span key={idx} className="badge badge-gold" style={{ fontSize: "11px" }}>
-                                            🎴 {c.name} (🪙{c.marketValue})
+                                        <span
+                                            key={idx}
+                                            className="badge badge-gold"
+                                            style={{
+                                                fontSize: "11px",
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "6px",
+                                                padding: "6px 10px",
+                                            }}
+                                        >
+                                            🎴 {c.name} (Bought: 🪙{c.boughtPrice !== undefined && c.boughtPrice !== null ? c.boughtPrice : (c.basePrice || 0)} | Market: 🪙{c.marketValue})
+                                            <button
+                                                type="button"
+                                                title={`Remove ${c.name} from team`}
+                                                onClick={() => handleRemoveCardFromTeam(selectedTeam._id, idx, c.name)}
+                                                disabled={actionLoading}
+                                                style={{
+                                                    background: "rgba(239, 68, 68, 0.25)",
+                                                    border: "1px solid rgba(239, 68, 68, 0.5)",
+                                                    color: "#fca5a5",
+                                                    borderRadius: "50%",
+                                                    width: "18px",
+                                                    height: "18px",
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    cursor: "pointer",
+                                                    fontSize: "10px",
+                                                    padding: 0,
+                                                    marginLeft: "2px",
+                                                    lineHeight: 1,
+                                                }}
+                                            >
+                                                ✕
+                                            </button>
                                         </span>
                                     ))
                                 ) : (
@@ -1774,43 +2260,139 @@ function AdminDashboard() {
                             Assign auction card won by <strong style={{ color: "#fff" }}>{selectedTeam.teamName}</strong>
                         </p>
 
-                        <form onSubmit={handleAssignCard} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                            <div>
-                                <label style={{ display: "block", fontSize: "12px", color: "var(--text-dim)", marginBottom: "4px" }}>
-                                    Select Tech Card from Catalog
-                                </label>
-                                <select
-                                    value={selectedCardName}
-                                    onChange={(e) => {
-                                        setSelectedCardName(e.target.value);
-                                        const c = cardsCatalog.find((card) => card.name === e.target.value);
-                                        if (c) setCardMarketValue(c.marketValue);
-                                    }}
-                                >
-                                    {cardsCatalog.map((c) => (
-                                        <option key={c._id} value={c.name}>
-                                            {c.name} (Base: {c.basePrice} | Value: {c.marketValue})
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                        {(() => {
+                            const availableCardsForTeam = cardsCatalog.filter(
+                                (c) => !(selectedTeam.techCards || []).some((tc) => tc.name?.trim().toLowerCase() === c.name?.trim().toLowerCase())
+                            );
 
-                            <div>
-                                <label style={{ display: "block", fontSize: "12px", color: "var(--text-dim)", marginBottom: "4px" }}>
-                                    Final Market Value Contribution
-                                </label>
-                                <input
-                                    type="number"
-                                    value={cardMarketValue}
-                                    onChange={(e) => setCardMarketValue(e.target.value)}
-                                    required
-                                />
-                            </div>
+                            return (
+                                <>
+                                    {availableCardsForTeam.length === 0 ? (
+                                        <div style={{ padding: "16px", background: "rgba(255, 255, 255, 0.04)", borderRadius: "8px", color: "var(--text-dim)", fontSize: "13px", textAlign: "center", border: "1px dashed rgba(255, 255, 255, 0.15)" }}>
+                                            ✅ This team already possesses all available Tech Cards from the catalog.
+                                        </div>
+                                    ) : (
+                                        <form onSubmit={handleAssignCard} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                            <div>
+                                                <label style={{ display: "block", fontSize: "12px", color: "var(--text-dim)", marginBottom: "4px" }}>
+                                                    Select Tech Card from Catalog
+                                                </label>
+                                                <select
+                                                    value={selectedCardName}
+                                                    onChange={(e) => {
+                                                        setSelectedCardName(e.target.value);
+                                                        const c = cardsCatalog.find((card) => card.name === e.target.value);
+                                                        if (c) {
+                                                            setCardBoughtValue(c.basePrice !== undefined ? c.basePrice : 50);
+                                                            setCardMarketValue(c.marketValue !== undefined ? c.marketValue : (c.basePrice || 50));
+                                                        }
+                                                    }}
+                                                >
+                                                    {availableCardsForTeam.map((c) => {
+                                                        const totalStock = c.totalCount !== undefined ? c.totalCount : 4;
+                                                        const allotted = (teams || []).reduce((acc, t) => {
+                                                            const hasCard = (t.techCards || []).some((tc) => tc.name?.trim() === c.name?.trim());
+                                                            return hasCard ? acc + 1 : acc;
+                                                        }, 0);
+                                                        const remaining = c.remainingCount !== undefined ? c.remainingCount : Math.max(0, totalStock - allotted);
 
-                            <button type="submit" className="btn-gold" disabled={actionLoading} style={{ padding: "12px", marginTop: "8px" }}>
-                                {actionLoading ? "Assigning..." : "Assign Tech Card to Team →"}
-                            </button>
-                        </form>
+                                                        return (
+                                                            <option key={c._id} value={c.name}>
+                                                                {c.name} — Base: 🪙 {c.basePrice} | Market: 🪙 {c.marketValue} ({remaining} Left)
+                                                            </option>
+                                                        );
+                                                    })}
+                                                </select>
+                                            </div>
+
+                                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                                                <div>
+                                                    <label style={{ display: "block", fontSize: "12px", color: "var(--text-dim)", marginBottom: "4px" }}>
+                                                        Bought Value (🪙 Paid in Auction) *
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={cardBoughtValue}
+                                                        onChange={(e) => setCardBoughtValue(e.target.value)}
+                                                        required
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label style={{ display: "block", fontSize: "12px", color: "var(--accent-gold)", fontWeight: "600", marginBottom: "4px" }}>
+                                                        Market Value (🪙 Asset Worth) *
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        value={cardMarketValue}
+                                                        onChange={(e) => setCardMarketValue(e.target.value)}
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div style={{ fontSize: "11px", color: "var(--text-dim)", lineHeight: 1.5, background: "rgba(255,255,255,0.02)", padding: "8px 12px", borderRadius: "8px" }}>
+                                                💡 <strong>Coins Effect:</strong> Team coins are reduced by 🪙 {cardBoughtValue || 0} (auction purchase) and increased by 🪙 {(Number(cardMarketValue || 0) - Number(cardBoughtValue || 0))} (appreciation margin).
+                                            </div>
+
+                                            <button type="submit" className="btn-gold" disabled={actionLoading} style={{ padding: "12px", marginTop: "4px" }}>
+                                                {actionLoading ? "Assigning..." : "Assign Tech Card to Team →"}
+                                            </button>
+                                        </form>
+                                    )}
+
+                                    {/* Currently Possessed Cards with Remove Option */}
+                                    <div style={{ marginTop: "24px", paddingTop: "16px", borderTop: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                                        <label style={{ display: "block", fontSize: "12px", color: "var(--primary)", textTransform: "uppercase", fontWeight: "700", marginBottom: "8px" }}>
+                                            Currently Possessed Cards ({selectedTeam.techCards?.length || 0})
+                                        </label>
+                                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                                            {(selectedTeam.techCards || []).length > 0 ? (
+                                                selectedTeam.techCards.map((c, idx) => (
+                                                    <span
+                                                        key={idx}
+                                                        className="badge badge-gold"
+                                                        style={{
+                                                            fontSize: "11px",
+                                                            display: "inline-flex",
+                                                            alignItems: "center",
+                                                            gap: "6px",
+                                                            padding: "5px 9px",
+                                                        }}
+                                                    >
+                                                        🎴 {c.name} (Bought: 🪙{c.boughtPrice !== undefined && c.boughtPrice !== null ? c.boughtPrice : (c.basePrice || 0)} | Market: 🪙{c.marketValue})
+                                                        <button
+                                                            type="button"
+                                                            title={`Remove ${c.name} from team`}
+                                                            onClick={() => handleRemoveCardFromTeam(selectedTeam._id, idx, c.name)}
+                                                            disabled={actionLoading}
+                                                            style={{
+                                                                background: "rgba(239, 68, 68, 0.25)",
+                                                                border: "1px solid rgba(239, 68, 68, 0.5)",
+                                                                color: "#fca5a5",
+                                                                borderRadius: "50%",
+                                                                width: "16px",
+                                                                height: "16px",
+                                                                display: "inline-flex",
+                                                                alignItems: "center",
+                                                                justifyContent: "center",
+                                                                cursor: "pointer",
+                                                                fontSize: "9px",
+                                                                padding: 0,
+                                                                lineHeight: 1,
+                                                            }}
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </span>
+                                                ))
+                                            ) : (
+                                                <span style={{ fontSize: "12px", color: "var(--text-dim)" }}>No cards assigned yet</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
             )}
@@ -1894,6 +2476,19 @@ function AdminDashboard() {
                     </div>
                 </div>
             )}
+
+            {/* Styled Confirmation Modal for All Delete / Destructive Actions */}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                itemHighlight={confirmModal.itemHighlight}
+                confirmText={confirmModal.confirmText}
+                confirmType={confirmModal.confirmType}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+                loading={actionLoading}
+            />
 
         </div>
     );

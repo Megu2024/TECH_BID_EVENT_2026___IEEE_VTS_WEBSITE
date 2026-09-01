@@ -28,11 +28,22 @@ const calculateTeamScore = (team) => {
         0
     );
 
+    // Tech Cards coin impact:
+    // Reduced by bought value (purchase cost in auction) and increased by (marketValue - boughtValue)
+    const techCardsCoinAdjustment = (team.techCards || []).reduce(
+        (sum, card) => {
+            const bought = Number(card.boughtPrice !== undefined && card.boughtPrice !== null ? card.boughtPrice : (card.basePrice || 0));
+            const market = Number(card.marketValue !== undefined && card.marketValue !== null ? card.marketValue : bought);
+            return sum - bought + (market - bought);
+        },
+        0
+    );
+
     // Total earned tech coins across all competition rounds
     const totalEarnedCoins = round1Total + round4Total + finalEval;
     
     // Remaining tech coins balance (cannot drop below 0)
-    const remainingTechCoins = Math.max(0, totalEarnedCoins - auctionSpent);
+    const remainingTechCoins = Math.max(0, totalEarnedCoins - auctionSpent + techCardsCoinAdjustment);
 
     // Final score formula
     const finalScore = remainingTechCoins + techCardsValue + finalEval;
@@ -41,6 +52,7 @@ const calculateTeamScore = (team) => {
         round1Total,
         round4Total,
         techCardsValue,
+        techCardsCoinAdjustment,
         remainingTechCoins,
         finalScore,
     };

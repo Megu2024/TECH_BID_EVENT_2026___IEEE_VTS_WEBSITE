@@ -56,6 +56,21 @@ function Login() {
                     padding: "40px",
                 }}>
                     <div style={{ textAlign: "center", marginBottom: "28px" }}>
+                        <div style={{
+                            width: "56px",
+                            height: "56px",
+                            margin: "0 auto 16px",
+                            borderRadius: "14px",
+                            background: "#ffffff",
+                            padding: "4px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            boxShadow: "0 0 20px rgba(0, 240, 255, 0.3)",
+                            overflow: "hidden",
+                        }}>
+                            <img src="/vts-logo.png" alt="IEEE VTS Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                        </div>
                         <span className="badge badge-cyan" style={{ marginBottom: "10px" }}>
                             PARTICIPANT PORTAL
                         </span>

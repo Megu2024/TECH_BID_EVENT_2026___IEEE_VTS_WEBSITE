@@ -608,14 +608,14 @@ const seedDatabase = async () => {
         // 7. Seed Tech Cards (Round 2)
         await TechCard.deleteMany({});
         const techCards = [
-            { name: "Solid-State LiDAR 360", basePrice: 60, marketValue: 120, category: "Perception Hardware" },
-            { name: "Edge AI Neural Vision Unit", basePrice: 50, marketValue: 100, category: "Perception Software" },
-            { name: "Smart Battery Management (BMS)", basePrice: 40, marketValue: 90, category: "Powertrain / Energy" },
-            { name: "Traction Motor Inverter (150kW)", basePrice: 55, marketValue: 110, category: "Powertrain / Energy" },
-            { name: "RTK Centimeter GPS Receiver", basePrice: 45, marketValue: 95, category: "Localization" },
-            { name: "V2X Telematics Control Unit", basePrice: 50, marketValue: 105, category: "Connected Vehicle" },
-            { name: "Automotive Isolated CAN Transceiver", basePrice: 30, marketValue: 70, category: "Embedded Hardware" },
-            { name: "Regenerative Braking Power Harvester", basePrice: 45, marketValue: 85, category: "Powertrain / Energy" },
+            { name: "Solid-State LiDAR 360", basePrice: 120, marketValue: 120, category: "Perception Hardware" },
+            { name: "Edge AI Neural Vision Unit", basePrice: 100, marketValue: 100, category: "Perception Software" },
+            { name: "Smart Battery Management (BMS)", basePrice: 90, marketValue: 90, category: "Powertrain / Energy" },
+            { name: "Traction Motor Inverter (150kW)", basePrice: 110, marketValue: 110, category: "Powertrain / Energy" },
+            { name: "RTK Centimeter GPS Receiver", basePrice: 95, marketValue: 95, category: "Localization" },
+            { name: "V2X Telematics Control Unit", basePrice: 105, marketValue: 105, category: "Connected Vehicle" },
+            { name: "Automotive Isolated CAN Transceiver", basePrice: 70, marketValue: 70, category: "Embedded Hardware" },
+            { name: "Regenerative Braking Power Harvester", basePrice: 85, marketValue: 85, category: "Powertrain / Energy" },
         ];
         await TechCard.insertMany(techCards);
         console.log(`✅ Seeded ${techCards.length} Tech Cards for Round 2 Auction`);

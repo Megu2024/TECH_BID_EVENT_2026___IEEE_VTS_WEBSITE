@@ -75,6 +75,10 @@ const teamSchema = new mongoose.Schema(
                     type: Number,
                     default: 0,
                 },
+                boughtPrice: {
+                    type: Number,
+                    default: 0,
+                },
                 marketValue: {
                     type: Number,
                     default: 0,

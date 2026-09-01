@@ -8,6 +8,7 @@ const {
     getTeamScore,
     getGameSessionStatus,
     getGameAnswers,
+    endGame,
 } = require("../controllers/gameController");
 
 const router = express.Router();
@@ -19,5 +20,6 @@ router.post("/answer", protect, submitAnswer);
 router.get("/score", protect, getTeamScore);
 router.get("/session-status", protect, getGameSessionStatus);
 router.get("/review-answers", protect, getGameAnswers);
+router.post("/end-game", protect, endGame);
 
 module.exports = router;

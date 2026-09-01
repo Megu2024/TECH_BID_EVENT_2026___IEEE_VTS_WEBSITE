@@ -442,15 +442,18 @@ function ParticipantDashboard() {
                                             border: "1px solid rgba(255, 215, 0, 0.2)",
                                         }}
                                     >
-                                        <div style={{ fontSize: "11px", color: "var(--accent-gold)", textTransform: "uppercase", fontWeight: "700" }}>
-                                            {card.category || "TECH CARD"}
-                                        </div>
-                                        <strong style={{ fontSize: "15px", color: "#fff", display: "block", marginTop: "4px" }}>
+                                        <strong style={{ fontSize: "15px", color: "#fff", display: "block", marginBottom: "8px" }}>
                                             {card.name}
                                         </strong>
-                                        <div style={{ marginTop: "10px", display: "flex", justifyContent: "space-between", fontSize: "13px" }}>
-                                            <span style={{ color: "var(--text-dim)" }}>Market Value:</span>
-                                            <span style={{ color: "var(--accent-gold)", fontWeight: "700" }}>🪙 {card.marketValue}</span>
+                                        <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px", background: "rgba(255,255,255,0.02)", padding: "8px 10px", borderRadius: "8px" }}>
+                                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                                <span style={{ color: "var(--text-dim)" }}>Bought Value:</span>
+                                                <span style={{ color: "var(--text-main)", fontWeight: "600", fontFamily: "var(--font-mono)" }}>🪙 {card.boughtPrice !== undefined && card.boughtPrice !== null ? card.boughtPrice : (card.basePrice || 0)}</span>
+                                            </div>
+                                            <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                                <span style={{ color: "var(--accent-gold)", fontWeight: "600" }}>Market Value:</span>
+                                                <span style={{ color: "#ffd700", fontWeight: "800", fontFamily: "var(--font-mono)" }}>🪙 {card.marketValue}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}

@@ -16,7 +16,11 @@ const techCardSchema = new mongoose.Schema(
         marketValue: {
             type: Number,
             required: true,
-            default: 100,
+            default: 50,
+        },
+        totalCount: {
+            type: Number,
+            default: 4,
         },
         category: {
             type: String,

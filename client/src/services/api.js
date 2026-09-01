@@ -199,6 +199,13 @@ export const api = {
             headers: getHeaders(true),
         }).then(handleResponse),
 
+    endGame: (game, round) =>
+        fetch(`${API_BASE_URL}/api/game/end-game`, {
+            method: "POST",
+            headers: getHeaders(true),
+            body: JSON.stringify({ game, round }),
+        }).then(handleResponse),
+
     // ----------------------------------------------------
     // EVENT SETTINGS & STATUS
     // ----------------------------------------------------

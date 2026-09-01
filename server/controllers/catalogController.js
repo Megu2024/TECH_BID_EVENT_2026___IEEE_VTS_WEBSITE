@@ -143,13 +143,41 @@ const saveImageSet = async (req, res) => {
     }
 };
 
+const Team = require("../models/Team");
+
 // ============================================================
 // TECH CARDS CATALOG (Round 2)
 // ============================================================
 const getTechCardsCatalog = async (req, res) => {
     try {
         const cards = await TechCard.find().sort({ name: 1 });
-        return res.status(200).json({ cards });
+        const teams = await Team.find({}, "techCards");
+
+        // Count how many times each card is allotted across all teams
+        const cardAllotmentCounts = {};
+        teams.forEach((team) => {
+            (team.techCards || []).forEach((c) => {
+                const cName = c.name?.trim();
+                if (cName) {
+                    cardAllotmentCounts[cName] = (cardAllotmentCounts[cName] || 0) + 1;
+                }
+            });
+        });
+
+        const cardsWithCounts = cards.map((card) => {
+            const cardObj = card.toObject();
+            const total = cardObj.totalCount !== undefined ? Number(cardObj.totalCount) : 4;
+            const allotted = cardAllotmentCounts[card.name.trim()] || 0;
+            const remaining = Math.max(0, total - allotted);
+            return {
+                ...cardObj,
+                totalCount: total,
+                allottedCount: allotted,
+                remainingCount: remaining,
+            };
+        });
+
+        return res.status(200).json({ cards: cardsWithCounts });
     } catch (error) {
         console.error("Get tech cards error:", error);
         return res.status(500).json({ message: "Server error while fetching tech cards" });
@@ -158,9 +186,9 @@ const getTechCardsCatalog = async (req, res) => {
 
 const createOrUpdateTechCard = async (req, res) => {
     try {
-        const { id, name, basePrice, marketValue, category, description } = req.body;
+        const { id, name, basePrice, marketValue, totalCount, description } = req.body;
 
-        if (!name) {
+        if (!name || !name.trim()) {
             return res.status(400).json({ message: "Card name is required" });
         }
 
@@ -175,11 +203,13 @@ const createOrUpdateTechCard = async (req, res) => {
             card = new TechCard({ name: name.trim() });
         }
 
+        const price = Number(basePrice !== undefined ? basePrice : (marketValue !== undefined ? marketValue : 50));
+
         card.name = name.trim();
-        card.basePrice = Number(basePrice || 50);
-        card.marketValue = Number(marketValue || 100);
-        card.category = category || "Hardware / Software";
-        card.description = description || "";
+        card.basePrice = price;
+        card.marketValue = Number(marketValue !== undefined ? marketValue : price);
+        card.totalCount = Number(totalCount !== undefined ? totalCount : (card.totalCount !== undefined ? card.totalCount : 4));
+        card.description = description ? description.trim() : "";
 
         await card.save();
 
@@ -189,7 +219,7 @@ const createOrUpdateTechCard = async (req, res) => {
         });
     } catch (error) {
         console.error("Save tech card error:", error);
-        return res.status(500).json({ message: "Server error while saving tech card" });
+        return res.status(500).json({ message: error.message || "Server error while saving tech card" });
     }
 };
 

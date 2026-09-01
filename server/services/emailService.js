@@ -74,7 +74,7 @@ const sendTeamInvitationEmail = async ({ toEmail, memberName, teamName, leaderNa
                 </p>
 
                 <div class="footer">
-                    © 2026 IEEE Vehicular Technology Society (VTS) Student Branch Chapter.
+                    © 2026 IEEE VTS Student Chapter VIT Chennai.
                 </div>
             </div>
         </body>

@@ -150,32 +150,18 @@ const startGame = async (req, res) => {
             });
         }
 
-        // Find or create session for THIS TEAM + THIS VERSION
+        const now = new Date();
+
+        // Find existing session for THIS TEAM for (game, round)
         let session = await GameSession.findOne({
             game: Number(game),
             round: Number(round),
             team: teamId,
-            version,
         });
 
-        const now = new Date();
-
-        if (!session) {
-            session = await GameSession.create({
-                game: Number(game),
-                round: Number(round),
-                team: teamId,
-                totalQuestions,
-                currentQuestionNumber: 1,
-                questionDuration: 10,
-                startedAt: now,
-                questionStartedAt: now,
-                status: "running",
-                version,
-            });
-        } else if (session.status !== "running") {
-            // If already completed, inform client
-            if (session.status === "completed") {
+        if (session) {
+            // If already completed for current active version, return completed status
+            if (session.version === version && session.status === "completed") {
                 return res.status(200).json({
                     message: "Quiz session already completed",
                     game: session.game,
@@ -188,12 +174,88 @@ const startGame = async (req, res) => {
                 });
             }
 
+            // Otherwise, reset or resume for active version
+            const isResumingSameVersion = session.version === version && session.status === "running";
+
+            session.version = version;
             session.totalQuestions = totalQuestions;
-            session.currentQuestionNumber = 1;
-            session.startedAt = now;
-            session.questionStartedAt = now;
+            session.currentQuestionNumber = isResumingSameVersion ? session.currentQuestionNumber : 1;
+            session.startedAt = isResumingSameVersion ? session.startedAt : now;
+            session.questionStartedAt = isResumingSameVersion ? session.questionStartedAt : now;
             session.status = "running";
             await session.save();
+
+            // Reset game score in team model for new version attempt
+            if (!isResumingSameVersion) {
+                const team = await Team.findById(teamId);
+                if (team) {
+                    if (!team.round1) team.round1 = {};
+                    if (!team.round4) team.round4 = {};
+
+                    if (Number(round) === 1 && Number(game) === 1) {
+                        team.round1.game1Score = 0;
+                    } else if (Number(round) === 1 && Number(game) === 3) {
+                        team.round1.game3Score = 0;
+                    } else if (Number(round) === 4 && Number(game) === 1) {
+                        team.round4.game1Score = 0;
+                    }
+
+                    const calculated = calculateTeamScore(team);
+                    team.round1.totalScore = calculated.round1Total;
+                    team.round4.totalScore = calculated.round4Total;
+                    team.techCoins = calculated.remainingTechCoins;
+                    team.finalScore = calculated.finalScore;
+                    await team.save();
+                    await recalculateAllTeamRanks();
+                }
+            }
+        } else {
+            try {
+                session = await GameSession.create({
+                    game: Number(game),
+                    round: Number(round),
+                    team: teamId,
+                    totalQuestions,
+                    currentQuestionNumber: 1,
+                    questionDuration: 10,
+                    startedAt: now,
+                    questionStartedAt: now,
+                    status: "running",
+                    version,
+                });
+            } catch (createErr) {
+                if (createErr.code === 11000) {
+                    session = await GameSession.findOne({
+                        game: Number(game),
+                        round: Number(round),
+                        team: teamId,
+                    });
+                } else {
+                    throw createErr;
+                }
+            }
+
+            const team = await Team.findById(teamId);
+            if (team) {
+                if (!team.round1) team.round1 = {};
+                if (!team.round4) team.round4 = {};
+
+                if (Number(round) === 1 && Number(game) === 1) {
+                    team.round1.game1Score = 0;
+                } else if (Number(round) === 1 && Number(game) === 3) {
+                    team.round1.game3Score = 0;
+                } else if (Number(round) === 4 && Number(game) === 1) {
+                    team.round4.game1Score = 0;
+                }
+
+                const calculated = calculateTeamScore(team);
+                team.round1.totalScore = calculated.round1Total;
+                team.round4.totalScore = calculated.round4Total;
+                team.techCoins = calculated.remainingTechCoins;
+                team.finalScore = calculated.finalScore;
+                await team.save();
+                await recalculateAllTeamRanks();
+            }
         }
 
         return res.status(200).json({
@@ -440,18 +502,31 @@ const submitAnswer = async (req, res) => {
             throw error;
         }
 
-        // Update team score in Team model
+        // Calculate total coins earned for the ACTIVE VERSION session
+        const activeAnswers = await GameAnswer.find({
+            game: Number(game),
+            round: Number(round),
+            team: teamId,
+            version,
+        });
+
+        const activeVersionScore = activeAnswers.reduce(
+            (sum, a) => sum + (a.techCoins || 0),
+            0
+        );
+
+        // Update team score in Team model with active version score (latest attempt score)
         const team = await Team.findById(teamId);
         if (team) {
             if (!team.round1) team.round1 = {};
             if (!team.round4) team.round4 = {};
 
             if (Number(round) === 1 && Number(game) === 1) {
-                team.round1.game1Score = (team.round1.game1Score || 0) + techCoins;
+                team.round1.game1Score = activeVersionScore;
             } else if (Number(round) === 1 && Number(game) === 3) {
-                team.round1.game3Score = (team.round1.game3Score || 0) + techCoins;
+                team.round1.game3Score = activeVersionScore;
             } else if (Number(round) === 4 && Number(game) === 1) {
-                team.round4.game1Score = (team.round4.game1Score || 0) + techCoins;
+                team.round4.game1Score = activeVersionScore;
             }
 
             const calculated = calculateTeamScore(team);
@@ -615,22 +690,22 @@ const getGameAnswers = async (req, res) => {
         // Fetch questions
         const questions = await Question.find({ game, round }).sort({ questionNumber: 1 });
 
-        // Fetch user's answers for active version
-        let answers = await GameAnswer.find({
+        // Determine target version (active event version or highest version attempted)
+        const latestAnswerDoc = await GameAnswer.findOne({
             game,
             round,
             team: currentUser.team,
-            version,
-        });
+        }).sort({ version: -1 });
 
-        // Fallback to most recent answers if current version answers not found yet
-        if (answers.length === 0) {
-            answers = await GameAnswer.find({
-                game,
-                round,
-                team: currentUser.team,
-            }).sort({ version: -1 });
-        }
+        const targetVersion = latestAnswerDoc ? Math.max(version, latestAnswerDoc.version) : version;
+
+        // Fetch user's answers strictly for the target version
+        const answers = await GameAnswer.find({
+            game,
+            round,
+            team: currentUser.team,
+            version: targetVersion,
+        });
 
         const answerMap = {};
         answers.forEach((ans) => {
@@ -672,6 +747,85 @@ const getGameAnswers = async (req, res) => {
     }
 };
 
+// ============================================================
+// END GAME SESSION EARLY (Participant Early Exit)
+// ============================================================
+const endGame = async (req, res) => {
+    try {
+        const game = Number(req.body.game);
+        const round = Number(req.body.round);
+
+        if (!game || !round) {
+            return res.status(400).json({ message: "Game and round are required" });
+        }
+
+        const currentUser = await User.findById(req.user._id);
+        if (!currentUser || !currentUser.team) {
+            return res.status(400).json({ message: "You are not part of a team" });
+        }
+
+        const teamId = currentUser.team;
+        const { version } = await checkGameStatusAndPin(game, round);
+
+        // Find and complete active session
+        let session = await GameSession.findOne({
+            game,
+            round,
+            team: teamId,
+        });
+
+        if (session) {
+            session.status = "completed";
+            await session.save();
+        }
+
+        // Calculate total coins earned for the ACTIVE VERSION session so far
+        const activeAnswers = await GameAnswer.find({
+            game,
+            round,
+            team: teamId,
+            version,
+        });
+
+        const activeVersionScore = activeAnswers.reduce(
+            (sum, a) => sum + (a.techCoins || 0),
+            0
+        );
+
+        // Update team score in Team model
+        const team = await Team.findById(teamId);
+        if (team) {
+            if (!team.round1) team.round1 = {};
+            if (!team.round4) team.round4 = {};
+
+            if (round === 1 && game === 1) {
+                team.round1.game1Score = activeVersionScore;
+            } else if (round === 1 && game === 3) {
+                team.round1.game3Score = activeVersionScore;
+            } else if (round === 4 && game === 1) {
+                team.round4.game1Score = activeVersionScore;
+            }
+
+            const calculated = calculateTeamScore(team);
+            team.round1.totalScore = calculated.round1Total;
+            team.round4.totalScore = calculated.round4Total;
+            team.techCoins = calculated.remainingTechCoins;
+            team.finalScore = calculated.finalScore;
+            await team.save();
+            await recalculateAllTeamRanks();
+        }
+
+        return res.status(200).json({
+            message: "Game session completed early",
+            roundCompleted: true,
+            totalEarnedCoins: activeVersionScore,
+        });
+    } catch (error) {
+        console.error("End game error:", error);
+        return res.status(500).json({ message: "Server error while ending game" });
+    }
+};
+
 module.exports = {
     verifyGamePin,
     startGame,
@@ -680,4 +834,5 @@ module.exports = {
     getTeamScore,
     getGameSessionStatus,
     getGameAnswers,
+    endGame,
 };

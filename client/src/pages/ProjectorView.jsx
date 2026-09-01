@@ -85,14 +85,15 @@ function ProjectorView() {
                         width: "48px",
                         height: "48px",
                         borderRadius: "14px",
-                        background: "linear-gradient(135deg, #00f0ff 0%, #7000ff 100%)",
+                        background: "#ffffff",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        fontSize: "24px",
-                        boxShadow: "0 0 25px rgba(0, 240, 255, 0.4)",
+                        padding: "4px",
+                        boxShadow: "0 0 25px rgba(0, 110, 255, 0.4)",
+                        overflow: "hidden",
                     }}>
-                        📽️
+                        <img src="/vts-logo.png" alt="IEEE VTS Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
                     </div>
                     <div>
                         <div style={{ fontSize: "11px", color: "var(--primary)", fontWeight: "800", letterSpacing: "0.15em", textTransform: "uppercase" }}>

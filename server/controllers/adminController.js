@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const Admin = require("../models/Admin");
 const User = require("../models/User");
 const Team = require("../models/Team");
+const TechCard = require("../models/TechCard");
 const EventSettings = require("../models/EventSettings");
 const { calculateTeamScore, recalculateAllTeamRanks } = require("../services/scoringService");
 
@@ -216,14 +217,40 @@ const assignTechCards = async (req, res) => {
             });
         }
 
-        team.techCards = techCards.map((card) => ({
-            name: card.name,
-            basePrice: Number(card.basePrice || 0),
-            marketValue: Number(card.marketValue || 0),
-            category: card.category || "Hardware / Software",
-        }));
+        // Deduplicate cards by name
+        const uniqueCards = [];
+        const seenNames = new Set();
+        for (const card of techCards) {
+            const nameKey = card.name?.trim().toLowerCase();
+            if (nameKey && !seenNames.has(nameKey)) {
+                seenNames.add(nameKey);
+                const base = Number(card.basePrice || 0);
+                const bought = Number(card.boughtPrice !== undefined && card.boughtPrice !== null ? card.boughtPrice : base);
+                const market = Number(card.marketValue !== undefined && card.marketValue !== null ? card.marketValue : bought);
+                uniqueCards.push({
+                    name: card.name.trim(),
+                    basePrice: base,
+                    boughtPrice: bought,
+                    marketValue: market,
+                    category: card.category || "Hardware / Software",
+                });
+            }
+        }
+
+        team.techCards = uniqueCards;
+
+        // Synchronize catalog TechCard market values with latest assigned market values
+        for (const card of uniqueCards) {
+            if (card.name && card.marketValue !== undefined) {
+                await TechCard.findOneAndUpdate(
+                    { name: card.name },
+                    { marketValue: Number(card.marketValue) }
+                );
+            }
+        }
 
         const calculated = calculateTeamScore(team);
+        team.techCoins = calculated.remainingTechCoins;
         team.finalScore = calculated.finalScore;
 
         await team.save();

@@ -1,13 +1,20 @@
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import Navbar from "../components/Navbar";
+import TeamDetailsModal from "../components/TeamDetailsModal";
+import { useAuth } from "../context/AuthContext";
 
 function Leaderboard() {
+    const { user } = useAuth();
     const [leaderboard, setLeaderboard] = useState([]);
     const [search, setSearch] = useState("");
     const [visible, setVisible] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+
+    // Modal state for team details
+    const [selectedTeam, setSelectedTeam] = useState(null);
+    const [detailsModalOpen, setDetailsModalOpen] = useState(false);
 
     const loadLeaderboard = async () => {
         try {
@@ -133,13 +140,21 @@ function Leaderboard() {
                                 
                                 {/* 2ND PLACE (SILVER) */}
                                 {top2 && (
-                                    <div className="glass-card" style={{
-                                        padding: "28px",
-                                        textAlign: "center",
-                                        border: "1px solid rgba(203, 213, 225, 0.3)",
-                                        background: "linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%)",
-                                        order: window.innerWidth > 768 ? 1 : 2,
-                                    }}>
+                                    <div
+                                        className="glass-card"
+                                        onClick={() => {
+                                            setSelectedTeam(top2);
+                                            setDetailsModalOpen(true);
+                                        }}
+                                        style={{
+                                            padding: "28px",
+                                            textAlign: "center",
+                                            border: "1px solid rgba(203, 213, 225, 0.3)",
+                                            background: "linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%)",
+                                            order: window.innerWidth > 768 ? 1 : 2,
+                                            cursor: "pointer",
+                                        }}
+                                    >
                                         <div style={{ fontSize: "36px", marginBottom: "8px" }}>🥈</div>
                                         <span className="badge" style={{ background: "rgba(203, 213, 225, 0.15)", color: "#e2e8f0", borderColor: "rgba(203, 213, 225, 0.4)", marginBottom: "10px" }}>
                                             RANK #2 • RUNNER UP
@@ -162,15 +177,23 @@ function Leaderboard() {
 
                                 {/* 1ST PLACE (CHAMPION - GOLD) */}
                                 {top1 && (
-                                    <div className="glass-card" style={{
-                                        padding: "36px 28px",
-                                        textAlign: "center",
-                                        border: "1px solid rgba(255, 215, 0, 0.5)",
-                                        background: "linear-gradient(180deg, rgba(255, 215, 0, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%)",
-                                        boxShadow: "0 0 50px rgba(255, 215, 0, 0.25)",
-                                        transform: "translateY(-12px)",
-                                        order: 1,
-                                    }}>
+                                    <div
+                                        className="glass-card"
+                                        onClick={() => {
+                                            setSelectedTeam(top1);
+                                            setDetailsModalOpen(true);
+                                        }}
+                                        style={{
+                                            padding: "36px 28px",
+                                            textAlign: "center",
+                                            border: "1px solid rgba(255, 215, 0, 0.5)",
+                                            background: "linear-gradient(180deg, rgba(255, 215, 0, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%)",
+                                            boxShadow: "0 0 50px rgba(255, 215, 0, 0.25)",
+                                            transform: "translateY(-12px)",
+                                            order: 1,
+                                            cursor: "pointer",
+                                        }}
+                                    >
                                         <div style={{ fontSize: "48px", marginBottom: "8px" }} className="animate-float">👑</div>
                                         <span className="badge badge-gold" style={{ fontSize: "12px", padding: "6px 16px", marginBottom: "12px" }}>
                                             🏆 RANK #1 • CURRENT LEADER
@@ -193,13 +216,21 @@ function Leaderboard() {
 
                                 {/* 3RD PLACE (BRONZE) */}
                                 {top3 && (
-                                    <div className="glass-card" style={{
-                                        padding: "28px",
-                                        textAlign: "center",
-                                        border: "1px solid rgba(217, 119, 6, 0.35)",
-                                        background: "linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%)",
-                                        order: 3,
-                                    }}>
+                                    <div
+                                        className="glass-card"
+                                        onClick={() => {
+                                            setSelectedTeam(top3);
+                                            setDetailsModalOpen(true);
+                                        }}
+                                        style={{
+                                            padding: "28px",
+                                            textAlign: "center",
+                                            border: "1px solid rgba(217, 119, 6, 0.35)",
+                                            background: "linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%)",
+                                            order: 3,
+                                            cursor: "pointer",
+                                        }}
+                                    >
                                         <div style={{ fontSize: "36px", marginBottom: "8px" }}>🥉</div>
                                         <span className="badge" style={{ background: "rgba(217, 119, 6, 0.15)", color: "#fbbf24", borderColor: "rgba(217, 119, 6, 0.4)", marginBottom: "10px" }}>
                                             RANK #3 • 2ND RUNNER UP
@@ -229,7 +260,7 @@ function Leaderboard() {
                                 <div>
                                     <h3 style={{ fontSize: "20px", color: "#fff", margin: 0 }}>All Team Standings</h3>
                                     <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "2px" }}>
-                                        {filteredTeams.length} of {leaderboard.length} teams listed
+                                        💡 Click on any team row to view full details & scoring breakdown
                                     </div>
                                 </div>
 
@@ -252,6 +283,7 @@ function Leaderboard() {
                                             <th style={{ padding: "16px 20px", color: "var(--text-muted)", textTransform: "uppercase", fontSize: "12px", fontWeight: "700" }}>Tech Cards</th>
                                             <th style={{ padding: "16px 20px", color: "var(--text-muted)", textTransform: "uppercase", fontSize: "12px", fontWeight: "700" }}>Active Coins</th>
                                             <th style={{ padding: "16px 20px", textAlign: "right", color: "var(--text-muted)", textTransform: "uppercase", fontSize: "12px", fontWeight: "700" }}>Final Score</th>
+                                            <th style={{ padding: "16px 20px", textAlign: "right", color: "var(--text-muted)", textTransform: "uppercase", fontSize: "12px", fontWeight: "700" }}>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -264,11 +296,18 @@ function Leaderboard() {
                                             return (
                                                 <tr
                                                     key={team._id || idx}
+                                                    onClick={() => {
+                                                        setSelectedTeam(team);
+                                                        setDetailsModalOpen(true);
+                                                    }}
                                                     style={{
                                                         borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
                                                         background: isTop1 ? "rgba(255, 215, 0, 0.03)" : "transparent",
                                                         transition: "background 0.2s ease",
+                                                        cursor: "pointer",
                                                     }}
+                                                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0, 240, 255, 0.05)")}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.background = isTop1 ? "rgba(255, 215, 0, 0.03)" : "transparent")}
                                                 >
                                                     <td style={{ padding: "18px 20px" }}>
                                                         <span style={{
@@ -313,6 +352,18 @@ function Leaderboard() {
                                                             {team.finalScore || 0}
                                                         </span>
                                                     </td>
+                                                    <td style={{ padding: "18px 20px", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedTeam(team);
+                                                                setDetailsModalOpen(true);
+                                                            }}
+                                                            className="btn-secondary"
+                                                            style={{ padding: "6px 14px", fontSize: "12px" }}
+                                                        >
+                                                            🔍 View Details
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                             );
                                         })}
@@ -323,6 +374,13 @@ function Leaderboard() {
                     </div>
                 )}
             </div>
+
+            {/* Team Details Modal */}
+            <TeamDetailsModal
+                team={selectedTeam}
+                isOpen={detailsModalOpen}
+                onClose={() => setDetailsModalOpen(false)}
+            />
         </div>
     );
 }

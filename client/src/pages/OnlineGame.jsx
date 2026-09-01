@@ -78,6 +78,7 @@ function OnlineGame() {
             }
 
             if (data.status === "running" && data.question) {
+                setError("");
                 setQuestion(data.question);
                 setCurrentQuestionNumber(data.currentQuestionNumber);
                 setTotalQuestions(data.totalQuestions);
@@ -192,8 +193,32 @@ function OnlineGame() {
         );
     }
 
+    // --------------------------------------------------------
+    // END QUIZ EARLY HANDLERS
+    // --------------------------------------------------------
+    const handleEndGameEarly = () => {
+        setShowConfirmModal(true);
+    };
+
+    const confirmEndGameEarly = async () => {
+        try {
+            setSubmitting(true);
+            setShowConfirmModal(false);
+            await api.endGame(game, round);
+            await fetchScore();
+            setRoundCompleted(true);
+            setQuestion(null);
+            setTimeLeft(0);
+        } catch (err) {
+            console.error("Error ending game:", err);
+            setError(err.message || "Failed to end quiz early");
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     return (
-        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#060913" }}>
+        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg-dark)" }}>
             <Navbar />
 
             <div style={{ maxWidth: "1000px", margin: "0 auto", padding: "32px 24px 80px", width: "100%", flex: 1 }}>
@@ -217,25 +242,48 @@ function OnlineGame() {
                         </h2>
                     </div>
 
-                    <div style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        background: "rgba(255, 215, 0, 0.12)",
-                        border: "1px solid rgba(255, 215, 0, 0.35)",
-                        padding: "10px 20px",
-                        borderRadius: "14px",
-                        boxShadow: "0 0 20px rgba(255, 215, 0, 0.15)",
-                    }}>
-                        <span style={{ fontSize: "20px" }}>🪙</span>
-                        <div>
-                            <div style={{ fontSize: "11px", color: "var(--accent-gold)", textTransform: "uppercase", fontWeight: "700" }}>
-                                Earned Coins
-                            </div>
-                            <div style={{ fontSize: "20px", fontWeight: "900", fontFamily: "var(--font-mono)", color: "#fff" }}>
-                                {score}
+                    <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                        <div style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            background: "rgba(255, 215, 0, 0.12)",
+                            border: "1px solid rgba(255, 215, 0, 0.35)",
+                            padding: "10px 20px",
+                            borderRadius: "14px",
+                            boxShadow: "0 0 20px rgba(255, 215, 0, 0.15)",
+                        }}>
+                            <span style={{ fontSize: "20px" }}>🪙</span>
+                            <div>
+                                <div style={{ fontSize: "11px", color: "var(--accent-gold)", textTransform: "uppercase", fontWeight: "700" }}>
+                                    Earned Coins
+                                </div>
+                                <div style={{ fontSize: "20px", fontWeight: "900", fontFamily: "var(--font-mono)", color: "#fff" }}>
+                                    {score}
+                                </div>
                             </div>
                         </div>
+
+                        {!roundCompleted && question && (
+                            <button
+                                type="button"
+                                onClick={handleEndGameEarly}
+                                disabled={submitting}
+                                style={{
+                                    padding: "10px 16px",
+                                    borderRadius: "12px",
+                                    background: "rgba(244, 63, 94, 0.12)",
+                                    border: "1px solid rgba(244, 63, 94, 0.4)",
+                                    color: "#fb7185",
+                                    fontWeight: "700",
+                                    fontSize: "13px",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s ease",
+                                }}
+                            >
+                                🛑 End Quiz
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -454,9 +502,88 @@ function OnlineGame() {
                         </div>
 
                     </div>
-                ) : null}
+                ) : (
+                    <div className="glass-card" style={{ padding: "60px 32px", textAlign: "center", maxWidth: "600px", margin: "40px auto" }}>
+                        <div style={{ fontSize: "56px", marginBottom: "16px" }}>⚡</div>
+                        <h3 style={{ fontSize: "24px", color: "#fff", marginBottom: "12px" }}>
+                            {error ? "Session Notice" : "Preparing Quiz Session"}
+                        </h3>
+                        <p style={{ color: "var(--text-muted)", fontSize: "15px", lineHeight: "1.6", marginBottom: "28px" }}>
+                            {error || "Unable to retrieve live question. Please launch the quiz from your Participant Dashboard."}
+                        </p>
+                        <Link to="/dashboard" className="btn-primary" style={{ padding: "12px 28px", fontSize: "14px" }}>
+                            Return to Participant Dashboard →
+                        </Link>
+                    </div>
+                )}
 
             </div>
+
+            {/* In-Website Custom Confirmation Modal */}
+            {showConfirmModal && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: "rgba(0, 0, 0, 0.75)",
+                        backdropFilter: "blur(8px)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 2000,
+                        padding: "20px",
+                    }}
+                >
+                    <div
+                        className="glass-card"
+                        style={{
+                            maxWidth: "460px",
+                            width: "100%",
+                            padding: "32px",
+                            borderRadius: "20px",
+                            border: "1px solid rgba(244, 63, 94, 0.4)",
+                            boxShadow: "0 0 40px rgba(244, 63, 94, 0.2)",
+                            textAlign: "center",
+                        }}
+                    >
+                        <div style={{ fontSize: "42px", marginBottom: "12px" }}>🛑</div>
+                        <h3 style={{ fontSize: "22px", margin: "0 0 10px 0", color: "#fff" }}>
+                            End Quiz Early?
+                        </h3>
+                        <p style={{ fontSize: "14px", color: "var(--text-muted)", lineHeight: "1.6", marginBottom: "28px" }}>
+                            Are you sure you want to exit the quiz arena? Your current progress will be submitted, and you will receive Tech Coins for the questions answered so far.
+                        </p>
+                        <div style={{ display: "flex", gap: "12px" }}>
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmModal(false)}
+                                className="btn-secondary"
+                                style={{ flex: 1, padding: "12px", fontSize: "14px" }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmEndGameEarly}
+                                disabled={submitting}
+                                className="btn-primary"
+                                style={{
+                                    flex: 1,
+                                    padding: "12px",
+                                    fontSize: "14px",
+                                    background: "linear-gradient(135deg, #f43f5e 0%, #e11d48 100%)",
+                                    boxShadow: "0 0 20px rgba(244, 63, 94, 0.4)",
+                                }}
+                            >
+                                {submitting ? "Ending..." : "Yes, End Quiz"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

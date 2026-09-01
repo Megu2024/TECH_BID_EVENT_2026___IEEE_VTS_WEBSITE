@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
 import Navbar from "../components/Navbar";
+import ConfirmModal from "../components/ConfirmModal";
 
 function Team() {
     const { user, team, refreshTeam } = useAuth();
@@ -21,6 +22,17 @@ function Team() {
     const [actionLoading, setActionLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
+
+    // Styled Confirmation Modal State
+    const [confirmModal, setConfirmModal] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        itemHighlight: "",
+        confirmText: "Remove",
+        confirmType: "danger",
+        onConfirm: () => {},
+    });
 
     const loadTeamData = async () => {
         try {
@@ -116,20 +128,30 @@ function Team() {
     };
 
     // 3. Remove confirmed member
-    const handleRemoveMember = async (memberId) => {
-        setMessage("");
-        setError("");
-
-        try {
-            setActionLoading(true);
-            await api.removeTeamMember(memberId);
-            setMessage("Member removed from team");
-            await refreshTeam();
-        } catch (err) {
-            setError(err.message || "Failed to remove member");
-        } finally {
-            setActionLoading(false);
-        }
+    const handleRemoveMember = (memberId, memberName) => {
+        setConfirmModal({
+            isOpen: true,
+            title: "Remove Teammate",
+            message: "Are you sure you want to remove this member from your team roster?",
+            itemHighlight: memberName,
+            confirmText: "Remove Member",
+            confirmType: "danger",
+            onConfirm: async () => {
+                setMessage("");
+                setError("");
+                try {
+                    setActionLoading(true);
+                    await api.removeTeamMember(memberId);
+                    setMessage(`Member "${memberName}" removed from team`);
+                    await refreshTeam();
+                } catch (err) {
+                    setError(err.message || "Failed to remove member");
+                } finally {
+                    setActionLoading(false);
+                    setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+                }
+            },
+        });
     };
 
     if (loading) {
@@ -383,7 +405,7 @@ function Team() {
 
                                         {isLeader && !member.isLeader && (
                                             <button
-                                                onClick={() => handleRemoveMember(member._id || idx)}
+                                                onClick={() => handleRemoveMember(member._id || idx, member.name)}
                                                 className="btn-danger"
                                                 disabled={actionLoading}
                                                 style={{ padding: "6px 12px", fontSize: "12px" }}
@@ -436,6 +458,19 @@ function Team() {
                 )}
 
             </div>
+
+            {/* Confirmation Modal */}
+            <ConfirmModal
+                isOpen={confirmModal.isOpen}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                itemHighlight={confirmModal.itemHighlight}
+                confirmText={confirmModal.confirmText}
+                confirmType={confirmModal.confirmType}
+                onConfirm={confirmModal.onConfirm}
+                onCancel={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+                loading={actionLoading}
+            />
         </div>
     );
 }
