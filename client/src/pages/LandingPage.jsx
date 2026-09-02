@@ -74,13 +74,22 @@ function LandingPage() {
                     {/* Action CTAs */}
                     <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap", marginBottom: "36px" }}>
                         {user ? (
-                            <Link
-                                to={isAdmin ? "/admin" : "/dashboard"}
-                                className="btn-primary"
-                                style={{ padding: "16px 36px", fontSize: "16px" }}
-                            >
-                                {isAdmin ? "Go to Admin Console →" : "Open Team Dashboard →"}
-                            </Link>
+                            <>
+                                <Link
+                                    to={isAdmin ? "/admin" : "/dashboard"}
+                                    className="btn-primary"
+                                    style={{ padding: "16px 36px", fontSize: "16px" }}
+                                >
+                                    {isAdmin ? "Go to Admin Console →" : "Open Team Dashboard →"}
+                                </Link>
+                                <Link
+                                    to="/leaderboard"
+                                    className="btn-gold"
+                                    style={{ padding: "16px 32px", fontSize: "16px" }}
+                                >
+                                    🏆 Live Standings
+                                </Link>
+                            </>
                         ) : (
                             <>
                                 <Link
@@ -97,15 +106,15 @@ function LandingPage() {
                                 >
                                     Team Login
                                 </Link>
+                                <Link
+                                    to="/event-info"
+                                    className="btn-secondary"
+                                    style={{ padding: "16px 32px", fontSize: "16px" }}
+                                >
+                                    📖 Event Guide
+                                </Link>
                             </>
                         )}
-                        <Link
-                            to="/leaderboard"
-                            className="btn-gold"
-                            style={{ padding: "16px 32px", fontSize: "16px" }}
-                        >
-                            🏆 Live Standings
-                        </Link>
                     </div>
 
                 </div>

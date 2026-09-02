@@ -28,14 +28,31 @@ const protectAdmin = async (req, res, next) => {
         }
 
         // Check in Admin collection first
-        let admin = await Admin.findById(adminId).select("-password");
+        let admin = null;
+        try {
+            if (adminId !== "admin_master_session") {
+                admin = await Admin.findById(adminId).select("-password");
+            }
+        } catch (e) {}
 
         // If not found in Admin, check User collection for role === 'admin'
-        if (!admin) {
-            const user = await User.findById(adminId).select("-password");
-            if (user && user.role === "admin") {
-                admin = user;
-            }
+        if (!admin && adminId !== "admin_master_session") {
+            try {
+                const user = await User.findById(adminId).select("-password");
+                if (user && user.role === "admin") {
+                    admin = user;
+                }
+            } catch (e) {}
+        }
+
+        // Fallback for valid decoded admin token
+        if (!admin && decoded.role === "admin") {
+            admin = {
+                _id: adminId,
+                name: process.env.ADMIN_NAME || "Tech Bid Admin",
+                email: decoded.email || process.env.ADMIN_EMAIL || "admin@techbid.com",
+                role: "admin",
+            };
         }
 
         if (!admin) {

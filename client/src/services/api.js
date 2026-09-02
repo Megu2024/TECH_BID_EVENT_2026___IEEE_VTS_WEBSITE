@@ -61,9 +61,21 @@ export const api = {
             headers: getHeaders(true),
         }).then(handleResponse),
 
+    getAdminBootstrap: () =>
+        fetch(`${API_BASE_URL}/api/admin/bootstrap`, {
+            method: "GET",
+            headers: getHeaders(true),
+        }).then(handleResponse),
+
     getAllTeams: (search = "") =>
         fetch(`${API_BASE_URL}/api/admin/teams${search ? `?search=${encodeURIComponent(search)}` : ""}`, {
             method: "GET",
+            headers: getHeaders(true),
+        }).then(handleResponse),
+
+    deleteTeam: (teamId) =>
+        fetch(`${API_BASE_URL}/api/admin/teams/${teamId}`, {
+            method: "DELETE",
             headers: getHeaders(true),
         }).then(handleResponse),
 
@@ -90,6 +102,13 @@ export const api = {
 
     assignAuctionStatement: (data) =>
         fetch(`${API_BASE_URL}/api/admin/assign/auction-statement`, {
+            method: "POST",
+            headers: getHeaders(true),
+            body: JSON.stringify(data),
+        }).then(handleResponse),
+
+    scoreRound5: (data) =>
+        fetch(`${API_BASE_URL}/api/admin/score/round5`, {
             method: "POST",
             headers: getHeaders(true),
             body: JSON.stringify(data),
@@ -256,6 +275,20 @@ export const api = {
             headers: getHeaders(true),
         }).then(handleResponse),
 
+    batchUpdateQuestionsTimeLimit: (data) =>
+        fetch(`${API_BASE_URL}/api/catalog/questions/batch-time`, {
+            method: "PUT",
+            headers: getHeaders(true),
+            body: JSON.stringify(data),
+        }).then(handleResponse),
+
+    bulkUpdateQuestions: (questions) =>
+        fetch(`${API_BASE_URL}/api/catalog/questions/bulk`, {
+            method: "PUT",
+            headers: getHeaders(true),
+            body: JSON.stringify({ questions }),
+        }).then(handleResponse),
+
     getImageSets: () =>
         fetch(`${API_BASE_URL}/api/catalog/image-sets`, {
             method: "GET",
@@ -275,11 +308,24 @@ export const api = {
             headers: getHeaders(true),
         }).then(handleResponse),
 
+    getPublicTechCards: () =>
+        fetch(`${API_BASE_URL}/api/catalog/tech-cards/public`, {
+            method: "GET",
+            headers: getHeaders(false),
+        }).then(handleResponse),
+
     saveTechCard: (cardData) =>
         fetch(`${API_BASE_URL}/api/catalog/tech-cards`, {
             method: "POST",
             headers: getHeaders(true),
             body: JSON.stringify(cardData),
+        }).then(handleResponse),
+
+    bulkUpdateTechCardsMarket: (cards) =>
+        fetch(`${API_BASE_URL}/api/catalog/tech-cards/bulk-market`, {
+            method: "PUT",
+            headers: getHeaders(true),
+            body: JSON.stringify({ cards }),
         }).then(handleResponse),
 
     deleteTechCard: (id) =>
@@ -311,6 +357,13 @@ export const api = {
         fetch(`${API_BASE_URL}/api/catalog/problem-statements/${id}`, {
             method: "DELETE",
             headers: getHeaders(true),
+        }).then(handleResponse),
+
+    bulkDeleteProblemStatements: (ids) =>
+        fetch(`${API_BASE_URL}/api/catalog/problem-statements/bulk-delete`, {
+            method: "POST",
+            headers: getHeaders(true),
+            body: JSON.stringify({ ids }),
         }).then(handleResponse),
 };
 

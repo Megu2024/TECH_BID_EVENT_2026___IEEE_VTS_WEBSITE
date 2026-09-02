@@ -33,10 +33,17 @@ function App() {
           <Route path="/join-team" element={<JoinTeam />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/event-info" element={<EventInfo />} />
-          <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/projector" element={<ProjectorView />} />
 
-          {/* Protected Participant Routes */}
+          {/* Protected Leaderboard (Accessible to both participants & admins) */}
+          <Route
+            path="/leaderboard"
+            element={
+              <ProtectedRoute allowBoth={true}>
+                <Leaderboard />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/dashboard"
             element={

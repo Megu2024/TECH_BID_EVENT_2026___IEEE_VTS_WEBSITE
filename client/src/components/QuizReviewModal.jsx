@@ -189,8 +189,8 @@ function QuizReviewModal({ isOpen, onClose, game, round, gameTitle }) {
                                             {q.question}
                                         </h4>
 
-                                        {/* Options Grid */}
-                                        {q.options && Object.keys(q.options).length > 0 ? (
+                                        {/* Options Grid vs Typed Answer */}
+                                        {q.options && Object.values(q.options).some(Boolean) && !q.jumbledWord ? (
                                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "10px" }}>
                                                 {Object.entries(q.options).filter(([k, v]) => Boolean(v)).map(([optKey, optVal]) => {
                                                     const isUserSelected = q.userAnswer === optKey;

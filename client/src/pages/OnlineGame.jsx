@@ -22,13 +22,16 @@ function OnlineGame() {
     const [score, setScore] = useState(0);
 
     const [selectedAnswer, setSelectedAnswer] = useState(null);
+    const [typedAnswer, setTypedAnswer] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [roundCompleted, setRoundCompleted] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     const timerRef = useRef(null);
+    const inputRef = useRef(null);
 
     // Get game title for header
     const getGameTitle = () => {
@@ -73,6 +76,7 @@ function OnlineGame() {
                 setQuestion(null);
                 setTimeLeft(0);
                 setSelectedAnswer(null);
+                setTypedAnswer("");
                 await fetchScore();
                 return;
             }
@@ -82,8 +86,11 @@ function OnlineGame() {
                 setQuestion(data.question);
                 setCurrentQuestionNumber(data.currentQuestionNumber);
                 setTotalQuestions(data.totalQuestions);
-                setTimeLeft(data.remainingSeconds || 10);
+                const activeTime = data.remainingSeconds !== undefined ? data.remainingSeconds : (data.question.timeLimit || 10);
+                setTimeLeft(activeTime);
+                setQuestionDuration(data.question.timeLimit || data.questionDuration || 10);
                 setSelectedAnswer(null);
+                setTypedAnswer("");
                 setSubmitting(false);
             }
         } catch (err) {
@@ -181,6 +188,18 @@ function OnlineGame() {
     useEffect(() => {
         initGame();
     }, [game, round]);
+
+    // Auto-focus typing cursor on the answer input box whenever question advances
+    useEffect(() => {
+        if (question && !roundCompleted && ((round === 4 && game === 1) || question.questionType === "jumbled" || Boolean(question.jumbledWord))) {
+            const timer = setTimeout(() => {
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                }
+            }, 60);
+            return () => clearTimeout(timer);
+        }
+    }, [question?._id, currentQuestionNumber, question?.questionNumber, roundCompleted]);
 
     if (loading) {
         return (
@@ -403,11 +422,6 @@ function OnlineGame() {
                                 }}>
                                     {question.jumbledWord}
                                 </div>
-                                {question.hint && (
-                                    <div style={{ fontSize: "13px", color: "var(--text-muted)" }}>
-                                        💡 Hint: {question.hint}
-                                    </div>
-                                )}
                             </div>
                         )}
 
@@ -433,68 +447,141 @@ function OnlineGame() {
                         )}
 
                         {/* Question Text */}
-                        <h3 style={{
-                            fontSize: "22px",
-                            lineHeight: 1.4,
-                            marginBottom: "32px",
-                            color: "#ffffff",
-                        }}>
-                            {question.question}
-                        </h3>
+                        {(!question.jumbledWord || question.question !== `Unscramble: ${question.jumbledWord}`) && (
+                            <h3 style={{
+                                fontSize: "22px",
+                                lineHeight: 1.4,
+                                marginBottom: "28px",
+                                color: "#ffffff",
+                            }}>
+                                {question.question}
+                            </h3>
+                        )}
 
-                        {/* Option Buttons */}
-                        <div style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-                            gap: "16px",
-                            marginBottom: "28px",
-                        }}>
-                            {Object.entries(question.options || {}).filter(([k, v]) => Boolean(v)).map(([key, value]) => {
-                                const isSelected = selectedAnswer === key;
-                                return (
-                                    <button
-                                        key={key}
-                                        onClick={() => handleAnswerSubmit(key)}
+                        {/* Choice Mode: Typed Answer Input for Jumbled Words vs MCQ Option Buttons */}
+                        {((round === 4 && game === 1) || question.questionType === "jumbled" || Boolean(question.jumbledWord)) ? (
+                            <form
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    if (!typedAnswer.trim() || submitting || selectedAnswer !== null) return;
+                                    handleAnswerSubmit(typedAnswer.trim());
+                                }}
+                                style={{
+                                    maxWidth: "600px",
+                                    margin: "0 auto 32px auto",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "18px",
+                                }}
+                            >
+                                <div style={{ position: "relative" }}>
+                                    <input
+                                        ref={inputRef}
+                                        type="text"
+                                        autoFocus
+                                        placeholder="TYPE THE UNSCRAMBLED WORD HERE..."
+                                        value={typedAnswer}
                                         disabled={submitting || selectedAnswer !== null}
+                                        onChange={(e) => setTypedAnswer(e.target.value)}
                                         style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: "14px",
-                                            padding: "18px 22px",
-                                            borderRadius: "14px",
-                                            background: isSelected ? "rgba(0, 240, 255, 0.2)" : "rgba(255, 255, 255, 0.03)",
-                                            border: isSelected ? "2px solid var(--primary)" : "1px solid rgba(255, 255, 255, 0.1)",
-                                            color: "#ffffff",
-                                            fontSize: "16px",
-                                            fontWeight: isSelected ? "700" : "500",
-                                            cursor: (submitting || selectedAnswer !== null) ? "default" : "pointer",
-                                            textAlign: "left",
-                                            transition: "all 0.15s ease",
-                                            boxShadow: isSelected ? "0 0 20px rgba(0, 240, 255, 0.3)" : "none",
-                                            transform: isSelected ? "scale(1.02)" : "none",
-                                        }}
-                                    >
-                                        <span style={{
-                                            width: "32px",
-                                            height: "32px",
-                                            borderRadius: "8px",
-                                            background: isSelected ? "var(--primary)" : "rgba(255, 255, 255, 0.08)",
-                                            color: isSelected ? "#000" : "#fff",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
+                                            width: "100%",
+                                            padding: "18px 24px",
+                                            fontSize: "22px",
                                             fontWeight: "800",
-                                            fontSize: "14px",
                                             fontFamily: "var(--font-mono)",
-                                            flexShrink: 0,
-                                        }}>
-                                            {key}
-                                        </span>
-                                        <span>{value}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
+                                            letterSpacing: "3px",
+                                            textAlign: "center",
+                                            textTransform: "uppercase",
+                                            borderRadius: "14px",
+                                            border: selectedAnswer !== null
+                                                ? "2px solid #34d399"
+                                                : "2px solid rgba(0, 240, 255, 0.4)",
+                                            background: "rgba(0, 0, 0, 0.5)",
+                                            color: "#fff",
+                                            outline: "none",
+                                            boxShadow: selectedAnswer !== null
+                                                ? "0 0 25px rgba(52, 211, 153, 0.3)"
+                                                : "0 0 25px rgba(0, 240, 255, 0.15)",
+                                            transition: "all 0.2s ease",
+                                        }}
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={!typedAnswer.trim() || submitting || selectedAnswer !== null}
+                                    className="btn-primary"
+                                    style={{
+                                        padding: "16px 32px",
+                                        fontSize: "17px",
+                                        fontWeight: "800",
+                                        letterSpacing: "1px",
+                                        borderRadius: "12px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: "10px",
+                                        cursor: (!typedAnswer.trim() || submitting || selectedAnswer !== null) ? "default" : "pointer",
+                                        opacity: (!typedAnswer.trim() || submitting || selectedAnswer !== null) ? 0.6 : 1,
+                                    }}
+                                >
+                                    {submitting ? "SUBMITTING..." : selectedAnswer !== null ? `✓ SUBMITTED: ${selectedAnswer}` : "SUBMIT ANSWER ➔"}
+                                </button>
+                            </form>
+                        ) : (
+                            <div style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                                gap: "16px",
+                                marginBottom: "28px",
+                            }}>
+                                {Object.entries(question.options || {}).filter(([k, v]) => Boolean(v)).map(([key, value]) => {
+                                    const isSelected = selectedAnswer === key;
+                                    return (
+                                        <button
+                                            key={key}
+                                            onClick={() => handleAnswerSubmit(key)}
+                                            disabled={submitting || selectedAnswer !== null}
+                                            style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: "14px",
+                                                padding: "18px 22px",
+                                                borderRadius: "14px",
+                                                background: isSelected ? "rgba(0, 240, 255, 0.2)" : "rgba(255, 255, 255, 0.03)",
+                                                border: isSelected ? "2px solid var(--primary)" : "1px solid rgba(255, 255, 255, 0.1)",
+                                                color: "#ffffff",
+                                                fontSize: "16px",
+                                                fontWeight: isSelected ? "700" : "500",
+                                                cursor: (submitting || selectedAnswer !== null) ? "default" : "pointer",
+                                                textAlign: "left",
+                                                transition: "all 0.15s ease",
+                                                boxShadow: isSelected ? "0 0 20px rgba(0, 240, 255, 0.3)" : "none",
+                                                transform: isSelected ? "scale(1.02)" : "none",
+                                            }}
+                                        >
+                                            <span style={{
+                                                width: "32px",
+                                                height: "32px",
+                                                borderRadius: "8px",
+                                                background: isSelected ? "var(--primary)" : "rgba(255, 255, 255, 0.08)",
+                                                color: isSelected ? "#000" : "#fff",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                fontWeight: "800",
+                                                fontSize: "14px",
+                                                fontFamily: "var(--font-mono)",
+                                                flexShrink: 0,
+                                            }}>
+                                                {key}
+                                            </span>
+                                            <span>{value}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
 
                         {/* Value Badge */}
                         <div style={{ textAlign: "center", fontSize: "14px", color: "var(--accent-gold)", fontWeight: "700" }}>

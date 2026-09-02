@@ -32,6 +32,10 @@ const problemStatementSchema = new mongoose.Schema(
             type: Number,
             default: 50,
         },
+        totalCount: {
+            type: Number,
+            default: 4,
+        },
     },
     {
         timestamps: true,

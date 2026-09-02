@@ -108,7 +108,7 @@ function TeamDetailsModal({ team, isOpen, onClose }) {
                             <strong style={{ display: "block", color: "#fff" }}>🪙 {team.round4?.game2Score || 0}</strong>
                         </div>
                         <div style={{ padding: "10px", background: "rgba(255, 255, 255, 0.02)", borderRadius: "8px" }}>
-                            <span style={{ color: "var(--text-dim)" }}>Final Evaluation Score:</span>
+                            <span style={{ color: "var(--text-dim)" }}>Round 5 Score:</span>
                             <strong style={{ display: "block", color: "#fff" }}>🪙 {team.round5?.finalEvaluationScore || 0}</strong>
                         </div>
                     </div>

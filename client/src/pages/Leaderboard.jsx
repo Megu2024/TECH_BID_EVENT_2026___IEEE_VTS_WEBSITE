@@ -22,7 +22,7 @@ function Leaderboard() {
             setError("");
             const data = await api.getPublicLeaderboard();
             setVisible(data.visible);
-            
+
             // Deterministically sort teams: Highest Final Score, then Highest Tech Coins
             const rawTeams = data.leaderboard || [];
             const sorted = [...rawTeams].sort((a, b) => {
@@ -30,7 +30,7 @@ function Leaderboard() {
                 if (scoreDiff !== 0) return scoreDiff;
                 return (b.techCoins || 0) - (a.techCoins || 0);
             });
-            
+
             setLeaderboard(sorted);
         } catch (err) {
             setVisible(false);
@@ -58,23 +58,13 @@ function Leaderboard() {
             <Navbar />
 
             <div style={{ maxWidth: "1200px", margin: "40px auto 100px", padding: "0 24px", width: "100%" }}>
-                
+
                 {/* Header Banner */}
                 <div style={{ textAlign: "center", marginBottom: "48px" }}>
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", marginBottom: "12px" }}>
-                        <span className="badge badge-gold">
-                            <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: "#ffd700", display: "inline-block", boxShadow: "0 0 8px #ffd700" }} />
-                            OFFICIAL EVENT STANDINGS
-                        </span>
-                        <span className="badge badge-cyan">IEEE VTS TECH BID 2026</span>
-                    </div>
-
                     <h1 style={{ fontSize: "clamp(32px, 5vw, 48px)", fontWeight: "900", letterSpacing: "-0.03em", marginBottom: "12px" }}>
                         Competition <span className="gradient-text-gold">Leaderboard</span>
                     </h1>
-                    <p style={{ color: "var(--text-muted)", fontSize: "16px", maxWidth: "600px", margin: "0 auto" }}>
-                        Live valuations, earned Tech Coins, and deterministic standings verified across all 5 competition stages.
-                    </p>
+
                 </div>
 
                 {loading ? (
@@ -137,7 +127,7 @@ function Leaderboard() {
                                 alignItems: "flex-end",
                                 marginBottom: "48px",
                             }}>
-                                
+
                                 {/* 2ND PLACE (SILVER) */}
                                 {top2 && (
                                     <div
@@ -157,11 +147,11 @@ function Leaderboard() {
                                     >
                                         <div style={{ fontSize: "36px", marginBottom: "8px" }}>🥈</div>
                                         <span className="badge" style={{ background: "rgba(203, 213, 225, 0.15)", color: "#e2e8f0", borderColor: "rgba(203, 213, 225, 0.4)", marginBottom: "10px" }}>
-                                            RANK #2 • RUNNER UP
+                                            RANK #2
                                         </span>
                                         <h3 style={{ fontSize: "22px", margin: "6px 0 4px", color: "#fff" }}>{top2.teamName}</h3>
                                         <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "16px" }}>Leader: {top2.leader?.name || "Participant"}</div>
-                                        
+
                                         <div style={{ display: "flex", justifyContent: "space-around", background: "rgba(255, 255, 255, 0.03)", padding: "12px", borderRadius: "12px" }}>
                                             <div>
                                                 <div style={{ fontSize: "11px", color: "var(--text-dim)", textTransform: "uppercase" }}>Coins</div>
@@ -196,11 +186,11 @@ function Leaderboard() {
                                     >
                                         <div style={{ fontSize: "48px", marginBottom: "8px" }} className="animate-float">👑</div>
                                         <span className="badge badge-gold" style={{ fontSize: "12px", padding: "6px 16px", marginBottom: "12px" }}>
-                                            🏆 RANK #1 • CURRENT LEADER
+                                            🏆 RANK #1
                                         </span>
                                         <h2 style={{ fontSize: "28px", margin: "8px 0 4px", color: "#fff", fontWeight: "900" }}>{top1.teamName}</h2>
                                         <div style={{ fontSize: "14px", color: "var(--accent-gold)", marginBottom: "20px" }}>Leader: {top1.leader?.name || "Participant"}</div>
-                                        
+
                                         <div style={{ display: "flex", justifyContent: "space-around", background: "rgba(255, 215, 0, 0.08)", border: "1px solid rgba(255, 215, 0, 0.25)", padding: "16px", borderRadius: "14px" }}>
                                             <div>
                                                 <div style={{ fontSize: "11px", color: "var(--accent-gold)", textTransform: "uppercase", fontWeight: "700" }}>Tech Coins</div>
@@ -233,11 +223,11 @@ function Leaderboard() {
                                     >
                                         <div style={{ fontSize: "36px", marginBottom: "8px" }}>🥉</div>
                                         <span className="badge" style={{ background: "rgba(217, 119, 6, 0.15)", color: "#fbbf24", borderColor: "rgba(217, 119, 6, 0.4)", marginBottom: "10px" }}>
-                                            RANK #3 • 2ND RUNNER UP
+                                            RANK #3
                                         </span>
                                         <h3 style={{ fontSize: "22px", margin: "6px 0 4px", color: "#fff" }}>{top3.teamName}</h3>
                                         <div style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "16px" }}>Leader: {top3.leader?.name || "Participant"}</div>
-                                        
+
                                         <div style={{ display: "flex", justifyContent: "space-around", background: "rgba(255, 255, 255, 0.03)", padding: "12px", borderRadius: "12px" }}>
                                             <div>
                                                 <div style={{ fontSize: "11px", color: "var(--text-dim)", textTransform: "uppercase" }}>Coins</div>
@@ -259,9 +249,7 @@ function Leaderboard() {
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
                                 <div>
                                     <h3 style={{ fontSize: "20px", color: "#fff", margin: 0 }}>All Team Standings</h3>
-                                    <div style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "2px" }}>
-                                        💡 Click on any team row to view full details & scoring breakdown
-                                    </div>
+
                                 </div>
 
                                 <input
@@ -302,12 +290,12 @@ function Leaderboard() {
                                                     }}
                                                     style={{
                                                         borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
-                                                        background: isTop1 ? "rgba(255, 215, 0, 0.03)" : "transparent",
+                                                        background: isTop1 ? "rgba(255, 215, 0, 0.03)" : isTop2 ? "rgba(203, 213, 225, 0.03)" : isTop3 ? "rgba(217, 119, 6, 0.03)" : "transparent",
                                                         transition: "background 0.2s ease",
                                                         cursor: "pointer",
                                                     }}
                                                     onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0, 240, 255, 0.05)")}
-                                                    onMouseLeave={(e) => (e.currentTarget.style.background = isTop1 ? "rgba(255, 215, 0, 0.03)" : "transparent")}
+                                                    onMouseLeave={(e) => (e.currentTarget.style.background = isTop1 ? "rgba(255, 215, 0, 0.03)" : isTop2 ? "rgba(203, 213, 225, 0.03)" : isTop3 ? "rgba(217, 119, 6, 0.03)" : "transparent")}
                                                 >
                                                     <td style={{ padding: "18px 20px" }}>
                                                         <span style={{
@@ -320,7 +308,7 @@ function Leaderboard() {
                                                             fontWeight: "800",
                                                             fontSize: "13px",
                                                             background: isTop1 ? "rgba(255, 215, 0, 0.15)" : isTop2 ? "rgba(203, 213, 225, 0.15)" : isTop3 ? "rgba(217, 119, 6, 0.15)" : "rgba(255, 255, 255, 0.04)",
-                                                            color: isTop1 ? "#ffd700" : isTop2 ? "#e2e8f0" : isTop3 ? "#fbbf24" : "var(--text-muted)",
+                                                            color: isTop1 ? "#ffd700" : isTop2 ? "#e2e8f0" : isTop3 ? "#f59e0b" : "var(--text-muted)",
                                                             border: isTop1 ? "1px solid rgba(255, 215, 0, 0.4)" : isTop2 ? "1px solid rgba(203, 213, 225, 0.4)" : isTop3 ? "1px solid rgba(217, 119, 6, 0.4)" : "1px solid rgba(255, 255, 255, 0.06)",
                                                         }}>
                                                             {isTop1 ? "🥇 #1" : isTop2 ? "🥈 #2" : isTop3 ? "🥉 #3" : `#${actualRank}`}
@@ -335,18 +323,29 @@ function Leaderboard() {
                                                         {team.leader?.name || "Participant"}
                                                     </td>
                                                     <td style={{ padding: "18px 20px" }}>
-                                                        <span className="badge badge-gold" style={{ fontSize: "11px" }}>
+                                                        <span className="badge" style={{
+                                                            fontSize: "11px",
+                                                            background: isTop1 ? "rgba(255, 215, 0, 0.12)" : isTop2 ? "rgba(203, 213, 225, 0.12)" : isTop3 ? "rgba(217, 119, 6, 0.12)" : "rgba(0, 240, 255, 0.1)",
+                                                            color: isTop1 ? "#ffd700" : isTop2 ? "#e2e8f0" : isTop3 ? "#f59e0b" : "#00f0ff",
+                                                            borderColor: isTop1 ? "rgba(255, 215, 0, 0.35)" : isTop2 ? "rgba(203, 213, 225, 0.35)" : isTop3 ? "rgba(217, 119, 6, 0.35)" : "rgba(0, 240, 255, 0.25)",
+                                                        }}>
                                                             🎴 {team.techCards?.length || 0} Cards
                                                         </span>
                                                     </td>
-                                                    <td style={{ padding: "18px 20px", fontWeight: "800", color: "#ffd700", fontFamily: "var(--font-mono)", fontSize: "15px" }}>
+                                                    <td style={{ 
+                                                        padding: "18px 20px", 
+                                                        fontWeight: "800", 
+                                                        color: isTop1 ? "#ffd700" : isTop2 ? "#e2e8f0" : isTop3 ? "#f59e0b" : "#ffd700", 
+                                                        fontFamily: "var(--font-mono)", 
+                                                        fontSize: "15px" 
+                                                    }}>
                                                         🪙 {team.techCoins || 0}
                                                     </td>
                                                     <td style={{ padding: "18px 20px", textAlign: "right" }}>
                                                         <span style={{
                                                             fontSize: "20px",
                                                             fontWeight: "900",
-                                                            color: isTop1 ? "var(--accent-gold)" : "var(--primary)",
+                                                            color: isTop1 ? "#ffd700" : isTop2 ? "#e2e8f0" : isTop3 ? "#f59e0b" : "var(--primary)",
                                                             fontFamily: "var(--font-mono)",
                                                         }}>
                                                             {team.finalScore || 0}

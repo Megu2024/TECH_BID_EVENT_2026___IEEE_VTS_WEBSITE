@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 const connectDB = require("./config/db");
 
 const authRoutes = require("./routes/authRoutes");
@@ -59,14 +60,29 @@ app.use("/api/catalog", catalogRoutes);
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
+    const server = app.listen(PORT, () => {
+        console.log(`🚀 IEEE VTS Tech Bid 2026 Server running on port ${PORT}`);
+    });
+
     try {
         await connectDB();
-
-        app.listen(PORT, () => {
-            console.log(`🚀 IEEE VTS Tech Bid 2026 Server running on port ${PORT}`);
-        });
     } catch (error) {
-        console.error("Failed to start server:", error);
+        console.error("⚠️ Initial MongoDB Atlas connection failed (likely IP whitelist or network issue).");
+        console.error("💡 If your IP changed, add your IP in MongoDB Atlas -> Network Access -> Add Current IP Address (or 0.0.0.0/0).");
+        
+        // Auto-retry connection in background every 10 seconds
+        const retryInterval = setInterval(async () => {
+            try {
+                if (mongoose.connection.readyState === 1) {
+                    clearInterval(retryInterval);
+                    return;
+                }
+                await connectDB();
+                clearInterval(retryInterval);
+            } catch (err) {
+                // Keep retrying quietly
+            }
+        }, 10000);
     }
 };
 

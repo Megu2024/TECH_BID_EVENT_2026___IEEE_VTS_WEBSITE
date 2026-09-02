@@ -3,22 +3,27 @@ import { Link } from "react-router-dom";
 import api from "../services/api";
 
 function ProjectorView() {
-    const [activeTab, setActiveTab] = useState("leaderboard"); // 'leaderboard' | 'statements'
+    const [activeTab, setActiveTab] = useState("leaderboard"); // 'leaderboard' | 'techcards' | 'statements'
     const [statements, setStatements] = useState([]);
+    const [techCards, setTechCards] = useState([]);
     const [leaderboard, setLeaderboard] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeCategory, setActiveCategory] = useState("ALL");
+    const [activeCardCategory, setActiveCardCategory] = useState("ALL");
+    const [cardSearchQuery, setCardSearchQuery] = useState("");
     const [isFullscreen, setIsFullscreen] = useState(false);
 
     const loadData = async () => {
         try {
             setLoading(true);
-            const [probData, lbData] = await Promise.all([
-                api.getPublicProblemStatements(),
+            const [probData, lbData, cardsData] = await Promise.all([
+                api.getPublicProblemStatements().catch(() => ({ statements: [] })),
                 api.getPublicLeaderboard().catch(() => ({ leaderboard: [] })),
+                api.getPublicTechCards().catch(() => ({ techCards: [] })),
             ]);
 
             setStatements(probData.statements || []);
+            setTechCards(cardsData.cards || cardsData.techCards || []);
 
             const rawTeams = lbData.leaderboard || [];
             const sorted = [...rawTeams].sort((a, b) => {
@@ -54,6 +59,15 @@ function ProjectorView() {
     const filteredStatements = activeCategory === "ALL"
         ? statements
         : statements.filter((s) => s.category === activeCategory);
+
+    const cardCategories = ["ALL", ...new Set(techCards.map((c) => c.category || "General").filter(Boolean))];
+    const filteredTechCards = techCards.filter((card) => {
+        const matchesCat = activeCardCategory === "ALL" || (card.category || "General") === activeCardCategory;
+        const matchesSearch = !cardSearchQuery.trim() ||
+            card.name?.toLowerCase().includes(cardSearchQuery.toLowerCase()) ||
+            card.description?.toLowerCase().includes(cardSearchQuery.toLowerCase());
+        return matchesCat && matchesSearch;
+    });
 
     const top1 = leaderboard[0];
     const top2 = leaderboard[1];
@@ -107,7 +121,7 @@ function ProjectorView() {
 
                 {/* View Switchers & Fullscreen */}
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <div style={{ display: "flex", background: "rgba(255, 255, 255, 0.04)", padding: "4px", borderRadius: "10px", border: "1px solid rgba(255, 255, 255, 0.08)" }}>
+                    <div style={{ display: "flex", background: "rgba(255, 255, 255, 0.04)", padding: "4px", borderRadius: "10px", border: "1px solid rgba(255, 255, 255, 0.08)", gap: "4px" }}>
                         <button
                             onClick={() => setActiveTab("leaderboard")}
                             style={{
@@ -119,9 +133,26 @@ function ProjectorView() {
                                 fontSize: "13px",
                                 border: "none",
                                 cursor: "pointer",
+                                transition: "all 0.15s ease",
                             }}
                         >
                             🏆 Standings
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("techcards")}
+                            style={{
+                                padding: "6px 16px",
+                                borderRadius: "8px",
+                                background: activeTab === "techcards" ? "var(--primary)" : "transparent",
+                                color: activeTab === "techcards" ? "#000" : "var(--text-muted)",
+                                fontWeight: "800",
+                                fontSize: "13px",
+                                border: "none",
+                                cursor: "pointer",
+                                transition: "all 0.15s ease",
+                            }}
+                        >
+                            🎴 Tech Cards
                         </button>
                         <button
                             onClick={() => setActiveTab("statements")}
@@ -134,6 +165,7 @@ function ProjectorView() {
                                 fontSize: "13px",
                                 border: "none",
                                 cursor: "pointer",
+                                transition: "all 0.15s ease",
                             }}
                         >
                             🎯 Problem Statements
@@ -336,7 +368,207 @@ function ProjectorView() {
             )}
 
             {/* ============================================================= */}
-            {/* VIEW 2: PROBLEM STATEMENTS CATALOG */}
+            {/* VIEW 2: STADIUM TECH CARDS CATALOG & AUCTION DECK */}
+            {/* ============================================================= */}
+            {activeTab === "techcards" && (
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "24px" }}>
+                    {/* Top Stats Ribbon */}
+                    <div style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        background: "rgba(0, 240, 255, 0.03)",
+                        border: "1px solid rgba(0, 240, 255, 0.15)",
+                        padding: "16px 24px",
+                        borderRadius: "14px",
+                        flexWrap: "wrap",
+                        gap: "16px",
+                    }}>
+                        {(() => {
+                            const totalCapacity = techCards.reduce((sum, c) => sum + (c.totalCount !== undefined ? Number(c.totalCount) : 4), 0);
+                            const availableUnits = techCards.reduce((sum, c) => {
+                                if (c.remainingCount !== undefined) return sum + Number(c.remainingCount);
+                                const owningCount = leaderboard.filter((t) =>
+                                    (t.techCards || []).some((tc) => tc.name?.trim().toLowerCase() === c.name?.trim().toLowerCase())
+                                ).length;
+                                return sum + Math.max(0, (c.totalCount || 4) - owningCount);
+                            }, 0);
+
+                            return (
+                                <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+                                    <div style={{ padding: "8px 18px", background: "rgba(0, 240, 255, 0.1)", border: "1px solid rgba(0, 240, 255, 0.3)", borderRadius: "10px" }}>
+                                        <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block", textTransform: "uppercase", fontWeight: "700", letterSpacing: "0.05em" }}>
+                                            AVAILABLE TECH CARDS
+                                        </span>
+                                        <strong style={{ fontSize: "20px", color: "var(--primary)", fontFamily: "var(--font-mono)", fontWeight: "900" }}>
+                                            🎴 {availableUnits} / {totalCapacity} Available
+                                        </strong>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        {/* Search Filter */}
+                        <div style={{ minWidth: "260px" }}>
+                            <input
+                                type="text"
+                                placeholder="🔍 Search card name or tech..."
+                                value={cardSearchQuery}
+                                onChange={(e) => setCardSearchQuery(e.target.value)}
+                                style={{
+                                    width: "100%",
+                                    padding: "8px 16px",
+                                    borderRadius: "10px",
+                                    fontSize: "13px",
+                                    background: "rgba(255, 255, 255, 0.05)",
+                                    border: "1px solid rgba(255, 255, 255, 0.15)",
+                                    color: "#fff",
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Category Filter Pills */}
+                    {cardCategories.length > 1 && (
+                        <div style={{ display: "flex", gap: "10px", overflowX: "auto" }}>
+                            {cardCategories.map((cat) => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setActiveCardCategory(cat)}
+                                    style={{
+                                        padding: "8px 20px",
+                                        borderRadius: "9999px",
+                                        fontSize: "13px",
+                                        fontWeight: "700",
+                                        background: activeCardCategory === cat ? "var(--primary)" : "rgba(255, 255, 255, 0.05)",
+                                        color: activeCardCategory === cat ? "#000" : "var(--text-muted)",
+                                        border: "none",
+                                        cursor: "pointer",
+                                        transition: "all 0.15s ease",
+                                    }}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Tech Cards Arena Grid */}
+                    {filteredTechCards.length === 0 ? (
+                        <div className="glass-card" style={{ padding: "60px 32px", textAlign: "center", color: "var(--text-dim)" }}>
+                            <h3>No Tech Cards match your filter</h3>
+                            <p style={{ fontSize: "14px", marginTop: "8px" }}>Try selecting 'ALL' or changing your search query.</p>
+                        </div>
+                    ) : (
+                        <div style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
+                            gap: "24px",
+                        }}>
+                            {filteredTechCards.map((card) => {
+                                const owningTeams = leaderboard.filter((t) =>
+                                    (t.techCards || []).some((tc) => tc.name?.trim().toLowerCase() === card.name?.trim().toLowerCase())
+                                );
+                                const remainingUnits = Math.max(0, (card.totalCount || 4) - owningTeams.length);
+
+                                return (
+                                    <div
+                                        key={card._id}
+                                        className="glass-card"
+                                        style={{
+                                            padding: "28px",
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            justifyContent: "space-between",
+                                            border: "1px solid rgba(0, 240, 255, 0.25)",
+                                            background: "linear-gradient(180deg, rgba(15, 23, 42, 0.8) 0%, rgba(3, 7, 18, 0.95) 100%)",
+                                            borderRadius: "16px",
+                                            gap: "16px",
+                                            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.3)",
+                                            transition: "all 0.25s ease",
+                                        }}
+                                    >
+                                        <div>
+                                            {/* Top badges: Category & Stock */}
+                                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                                                <span className="badge badge-purple" style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                                    {card.category || "Hardware / Software"}
+                                                </span>
+                                                <span className="badge" style={{
+                                                    fontSize: "11px",
+                                                    fontWeight: "700",
+                                                    background: remainingUnits > 0 ? "rgba(52, 211, 153, 0.15)" : "rgba(244, 63, 94, 0.15)",
+                                                    color: remainingUnits > 0 ? "#34d399" : "#fb7185",
+                                                    border: remainingUnits > 0 ? "1px solid rgba(52, 211, 153, 0.3)" : "1px solid rgba(244, 63, 94, 0.3)",
+                                                }}>
+                                                    📦 {remainingUnits} / {card.totalCount || 4} Available
+                                                </span>
+                                            </div>
+
+                                            {/* Card Name */}
+                                            <h2 style={{ fontSize: "22px", color: "#fff", fontWeight: "900", margin: "0 0 10px 0", letterSpacing: "-0.01em" }}>
+                                                {card.name}
+                                            </h2>
+
+                                            {/* Price / Value Box */}
+                                            <div style={{
+                                                display: "flex",
+                                                gap: "10px",
+                                                background: "rgba(255, 255, 255, 0.03)",
+                                                padding: "10px 14px",
+                                                borderRadius: "10px",
+                                                border: "1px solid rgba(255, 255, 255, 0.06)",
+                                                marginBottom: "14px",
+                                            }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <span style={{ fontSize: "11px", color: "var(--text-dim)", display: "block" }}>BASE PRICE</span>
+                                                    <strong style={{ fontSize: "16px", color: "var(--accent-gold)", fontFamily: "var(--font-mono)" }}>
+                                                        🪙 {card.basePrice || 50}
+                                                    </strong>
+                                                </div>
+                                                <div style={{ flex: 1, borderLeft: "1px solid rgba(255, 255, 255, 0.08)", paddingLeft: "10px" }}>
+                                                    <span style={{ fontSize: "11px", color: "var(--text-dim)", display: "block" }}>MARKET VALUE</span>
+                                                    <strong style={{ fontSize: "16px", color: "var(--primary)", fontFamily: "var(--font-mono)" }}>
+                                                        📈 🪙 {card.marketValue || card.basePrice || 50}
+                                                    </strong>
+                                                </div>
+                                            </div>
+
+                                            {/* Description */}
+                                            <p style={{ fontSize: "14px", color: "var(--text-muted)", lineHeight: 1.6, margin: 0 }}>
+                                                {card.description || "Official tournament technology item available for auction bidding."}
+                                            </p>
+                                        </div>
+
+                                        {/* Team Ownership Tracker */}
+                                        <div style={{ paddingTop: "14px", borderTop: "1px solid rgba(255, 255, 255, 0.06)" }}>
+                                            <div style={{ fontSize: "11px", color: "var(--text-dim)", textTransform: "uppercase", fontWeight: "700", marginBottom: "6px" }}>
+                                                Claimed By ({owningTeams.length} {owningTeams.length === 1 ? "Team" : "Teams"}):
+                                            </div>
+                                            {owningTeams.length > 0 ? (
+                                                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                                                    {owningTeams.map((t, idx) => (
+                                                        <span key={idx} className="badge badge-gold" style={{ fontSize: "11px", padding: "3px 8px" }}>
+                                                            🛡️ {t.teamName}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span style={{ fontSize: "12px", color: "rgba(255, 255, 255, 0.35)", fontStyle: "italic" }}>
+                                                    Available for live auction bidding
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ============================================================= */}
+            {/* VIEW 3: PROBLEM STATEMENTS CATALOG */}
             {/* ============================================================= */}
             {activeTab === "statements" && (
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "24px" }}>

@@ -5,10 +5,13 @@ const {
     adminLogin,
     getAdminProfile,
     getAllTeams,
+    getAdminBootstrap,
+    deleteTeam,
     scoreRound1Game2,
     assignTechCards,
     scoreRound4Game2,
     assignProblemStatementAuction,
+    scoreRound5,
     scoreRound5FinalEvaluation,
     triggerRecalculateRanks,
     toggleLeaderboardVisibility,
@@ -21,13 +24,16 @@ router.post("/login", adminLogin);
 
 // Protected Admin Routes
 router.get("/profile", protectAdmin, getAdminProfile);
+router.get("/bootstrap", protectAdmin, getAdminBootstrap);
 router.get("/teams", protectAdmin, getAllTeams);
+router.delete("/teams/:id", protectAdmin, deleteTeam);
 
 // Scoring & Assignment Portals
 router.post("/score/round1-game2", protectAdmin, scoreRound1Game2);
 router.post("/assign/tech-cards", protectAdmin, assignTechCards);
 router.post("/score/round4-game2", protectAdmin, scoreRound4Game2);
 router.post("/assign/auction-statement", protectAdmin, assignProblemStatementAuction);
+router.post("/score/round5", protectAdmin, scoreRound5);
 router.post("/score/final-evaluation", protectAdmin, scoreRound5FinalEvaluation);
 
 // Rankings & Controls

@@ -1,13 +1,15 @@
 const Team = require("../models/Team");
+const TechCard = require("../models/TechCard");
 
 /**
  * Calculates the total Tech Coins balance and final score for a team.
  * 
- * Formula:
- * Total Earned Coins = (R1 G1 + R1 G2 + R1 G3) + (R4 G1 + R4 G2) + R5 Final Evaluation
- * Remaining Tech Coins = Total Earned Coins - R5 Auction Coins Spent
- * Tech Cards Total Value = Sum of possessed Tech Cards' market values
- * Final Score = Remaining Tech Coins + Tech Cards Total Value + R5 Final Evaluation Score
+ * Transparent Mathematical Formula:
+ * 1. Total Earned Coins = (R1 G1 + R1 G2 + R1 G3) + (R4 G1 + R4 G2) + R5 Final Defense Score
+ * 2. Total Auction Spent = (Sum of Tech Cards Purchase Costs) + (R5 Problem Statement Auction Cost)
+ * 3. Remaining Tech Coins (Wallet) = Max(0, Total Earned Coins - Total Auction Spent)
+ * 4. Tech Cards Portfolio Market Value = Sum of market values of all owned Tech Cards
+ * 5. Grand Final Score = Remaining Tech Coins + Tech Cards Portfolio Market Value
  */
 const calculateTeamScore = (team) => {
     const r1g1 = Number(team.round1?.game1Score || 0);
@@ -19,40 +21,49 @@ const calculateTeamScore = (team) => {
     const r4g2 = Number(team.round4?.game2Score || 0);
     const round4Total = r4g1 + r4g2;
 
-    const finalEval = Number(team.round5?.finalEvaluationScore || 0);
-    const auctionSpent = Number(team.round5?.auctionCoinsSpent || 0);
+    const round5Eval = Number(team.round5?.finalEvaluationScore || 0);
+    const r5AuctionSpent = Number(team.round5?.auctionCoinsSpent || 0);
 
-    // Sum of market values of all Tech Cards owned by the team
-    const techCardsValue = (team.techCards || []).reduce(
-        (sum, card) => sum + Number(card.marketValue || 0),
-        0
-    );
-
-    // Tech Cards coin impact:
-    // Reduced by bought value (purchase cost in auction) and increased by (marketValue - boughtValue)
-    const techCardsCoinAdjustment = (team.techCards || []).reduce(
+    // Sum of auction purchase prices paid by the team for Tech Cards
+    const cardsBoughtCost = (team.techCards || []).reduce(
         (sum, card) => {
             const bought = Number(card.boughtPrice !== undefined && card.boughtPrice !== null ? card.boughtPrice : (card.basePrice || 0));
-            const market = Number(card.marketValue !== undefined && card.marketValue !== null ? card.marketValue : bought);
-            return sum - bought + (market - bought);
+            return sum + bought;
         },
         0
     );
 
-    // Total earned tech coins across all competition rounds
-    const totalEarnedCoins = round1Total + round4Total + finalEval;
-    
-    // Remaining tech coins balance (cannot drop below 0)
-    const remainingTechCoins = Math.max(0, totalEarnedCoins - auctionSpent + techCardsCoinAdjustment);
+    // Sum of current market values of all Tech Cards owned by the team
+    const cardsMarketValue = (team.techCards || []).reduce(
+        (sum, card) => {
+            const market = Number(card.marketValue !== undefined && card.marketValue !== null ? card.marketValue : (card.boughtPrice || card.basePrice || 0));
+            return sum + market;
+        },
+        0
+    );
 
-    // Final score formula
-    const finalScore = remainingTechCoins + techCardsValue + finalEval;
+    // Total gross coins earned across all rounds (unattended games default to 0)
+    const totalEarnedCoins = round1Total + round4Total + round5Eval;
+
+    // Total coins spent across Round 2 & Round 5 auctions
+    const totalAuctionSpent = cardsBoughtCost + r5AuctionSpent;
+
+    // Liquid remaining Tech Coins in team wallet (without card market value added into liquid coins)
+    const remainingTechCoins = Math.max(0, totalEarnedCoins - totalAuctionSpent);
+
+    // Grand final total score combining remaining liquid coins and tech card portfolio market value
+    const finalScore = remainingTechCoins + cardsMarketValue;
 
     return {
         round1Total,
         round4Total,
-        techCardsValue,
-        techCardsCoinAdjustment,
+        round5Eval,
+        totalEarnedCoins,
+        cardsBoughtCost,
+        cardsMarketValue,
+        techCardsValue: cardsMarketValue,
+        r5AuctionSpent,
+        totalAuctionSpent,
         remainingTechCoins,
         finalScore,
     };
@@ -60,12 +71,33 @@ const calculateTeamScore = (team) => {
 
 /**
  * Recalculates and updates scores and deterministic rankings for all teams.
+ * Synchronizes each team's owned Tech Cards with the latest market values from the catalog.
  */
 const recalculateAllTeamRanks = async () => {
     try {
-        const teams = await Team.find();
+        const [teams, catalogCards] = await Promise.all([
+            Team.find(),
+            TechCard.find().lean(),
+        ]);
+
+        const cardMarketMap = {};
+        catalogCards.forEach((c) => {
+            if (c.name) {
+                cardMarketMap[c.name.trim().toLowerCase()] = Number(c.marketValue !== undefined ? c.marketValue : (c.basePrice || 50));
+            }
+        });
 
         for (const team of teams) {
+            // Synchronize the marketValue on each owned techCard with the latest global catalog valuation!
+            if (team.techCards && team.techCards.length > 0) {
+                team.techCards.forEach((card) => {
+                    const cKey = card.name?.trim().toLowerCase();
+                    if (cKey && cardMarketMap[cKey] !== undefined) {
+                        card.marketValue = cardMarketMap[cKey];
+                    }
+                });
+            }
+
             const calculated = calculateTeamScore(team);
 
             if (!team.round1) team.round1 = {};

@@ -350,3 +350,98 @@ input::placeholder, textarea::placeholder {
 ::-webkit-scrollbar-thumb:hover {
   background: #334155;
 }
+
+/* ============================================================
+   RESPONSIVE DESIGN & MOBILE OPTIMIZATIONS
+   ============================================================ */
+
+/* Large Tablets & Laptops */
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Tablets & Mobile Devices */
+@media (max-width: 768px) {
+  body {
+    font-size: 14.5px;
+  }
+
+  .desktop-nav, .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-menu-btn {
+    display: block !important;
+  }
+
+  .glass-card {
+    padding: 18px 16px !important;
+    border-radius: var(--radius-md) !important;
+  }
+
+  /* Modals on Mobile */
+  .modal-overlay, div[style*="position: fixed"][style*="z-index: 1000"] {
+    padding: 12px !important;
+    align-items: flex-start !important;
+    overflow-y: auto !important;
+  }
+
+  div[style*="position: fixed"] > .glass-card {
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    padding: 20px 16px !important;
+    margin: auto 0 !important;
+  }
+
+  /* Buttons on Mobile */
+  .btn-primary, .btn-secondary, .btn-gold {
+    padding: 10px 18px !important;
+    font-size: 13.5px !important;
+  }
+
+  /* Inputs on Mobile */
+  input, select, textarea {
+    padding: 11px 14px !important;
+    font-size: 13.5px !important;
+  }
+
+  /* Headings on Mobile */
+  h1 {
+    font-size: 28px !important;
+    line-height: 1.25 !important;
+  }
+
+  h2 {
+    font-size: 22px !important;
+  }
+
+  h3 {
+    font-size: 18px !important;
+  }
+
+  /* Stacking Grids on Mobile */
+  div[style*="grid-template-columns: 1fr 1fr"],
+  div[style*="grid-template-columns: 1fr 1fr 1fr"],
+  div[style*="grid-template-columns: repeat(3,"],
+  div[style*="grid-template-columns: repeat(4,"] {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Small Mobile Screens */
+@media (max-width: 480px) {
+  .glass-card {
+    padding: 14px 12px !important;
+  }
+
+  h1 {
+    font-size: 24px !important;
+  }
+
+  .badge {
+    font-size: 10px !important;
+    padding: 3px 8px !important;
+  }
+}

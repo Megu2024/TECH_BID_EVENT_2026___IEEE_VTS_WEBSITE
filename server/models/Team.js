@@ -125,6 +125,10 @@ const teamSchema = new mongoose.Schema(
                 type: Number,
                 default: 0,
             },
+            explanationScore: {
+                type: Number,
+                default: 0,
+            },
             finalEvaluationScore: {
                 type: Number,
                 default: 0,
@@ -156,5 +160,9 @@ const teamSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
+
+teamSchema.index({ rank: 1, finalScore: -1 });
+teamSchema.index({ leader: 1 });
+teamSchema.index({ teamName: 1 });
 
 module.exports = mongoose.model("Team", teamSchema);

@@ -146,13 +146,11 @@ const getPublicLeaderboard = async (req, res) => {
             });
         }
 
-        // Ensure ranks and scores are fresh and accurately sorted
-        await recalculateAllTeamRanks();
-
         const teams = await Team.find()
             .select("teamName techCoins round1 round4 round5 techCards finalScore rank")
             .populate("leader", "name")
-            .sort({ finalScore: -1, techCoins: -1, "round1.totalScore": -1, createdAt: 1 });
+            .sort({ finalScore: -1, techCoins: -1, "round1.totalScore": -1, createdAt: 1 })
+            .lean();
 
         return res.status(200).json({
             visible: true,

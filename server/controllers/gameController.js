@@ -150,6 +150,13 @@ const startGame = async (req, res) => {
             });
         }
 
+        const firstQuestion = await Question.findOne({
+            game: Number(game),
+            round: Number(round),
+            questionNumber: 1,
+        });
+        const initialDuration = Number(firstQuestion?.timeLimit) || 10;
+
         const now = new Date();
 
         // Find existing session for THIS TEAM for (game, round)
@@ -180,6 +187,7 @@ const startGame = async (req, res) => {
             session.version = version;
             session.totalQuestions = totalQuestions;
             session.currentQuestionNumber = isResumingSameVersion ? session.currentQuestionNumber : 1;
+            session.questionDuration = isResumingSameVersion ? (session.questionDuration || initialDuration) : initialDuration;
             session.startedAt = isResumingSameVersion ? session.startedAt : now;
             session.questionStartedAt = isResumingSameVersion ? session.questionStartedAt : now;
             session.status = "running";
@@ -339,6 +347,30 @@ const getCurrentQuestion = async (req, res) => {
             });
         }
 
+        // Fetch question without sending the correct answer to frontend!
+        const question = await Question.findOne({
+            game,
+            round,
+            questionNumber: session.currentQuestionNumber,
+        }).select("-correctAnswer");
+
+        if (!question) {
+            // If question not found, mark completed or fallback
+            session.status = "completed";
+            await session.save();
+            return res.status(200).json({
+                status: "completed",
+                message: "Game round completed",
+            });
+        }
+
+        // Use question's custom time limit or fallback to session/10s
+        const duration = Number(question.timeLimit) || Number(session.questionDuration) || 10;
+        if (session.questionDuration !== duration) {
+            session.questionDuration = duration;
+            await session.save();
+        }
+
         // Calculate elapsed time for this team's current question
         const questionStartTime =
             session.questionStartedAt || session.startedAt || new Date();
@@ -346,7 +378,6 @@ const getCurrentQuestion = async (req, res) => {
         const elapsedSeconds =
             (Date.now() - new Date(questionStartTime).getTime()) / 1000;
 
-        const duration = session.questionDuration || 10;
         const remainingSeconds = Math.max(0, Math.ceil(duration - elapsedSeconds));
 
         // Auto-advance if time has expired
@@ -370,30 +401,13 @@ const getCurrentQuestion = async (req, res) => {
             return getCurrentQuestion(req, res);
         }
 
-        // Fetch question without sending the correct answer to frontend!
-        const question = await Question.findOne({
-            game,
-            round,
-            questionNumber: session.currentQuestionNumber,
-        }).select("-correctAnswer");
-
-        if (!question) {
-            // If question not found, mark completed or fallback
-            session.status = "completed";
-            await session.save();
-            return res.status(200).json({
-                status: "completed",
-                message: "Game round completed",
-            });
-        }
-
         return res.status(200).json({
             status: "running",
             question,
             currentQuestionNumber: session.currentQuestionNumber,
             totalQuestions: session.totalQuestions,
             remainingSeconds,
-            questionDuration: session.questionDuration,
+            questionDuration: duration,
         });
     } catch (error) {
         console.error("Get current question error:", error);
@@ -448,18 +462,6 @@ const submitAnswer = async (req, res) => {
             });
         }
 
-        // Verify Server Timer
-        const questionStartTime =
-            session.questionStartedAt || session.startedAt || new Date();
-        const elapsedSeconds =
-            (Date.now() - new Date(questionStartTime).getTime()) / 1000;
-
-        if (elapsedSeconds > (session.questionDuration || 10) + 1.5) {
-            return res.status(400).json({
-                message: "Time limit expired for this question",
-            });
-        }
-
         const question = await Question.findOne({
             game: Number(game),
             round: Number(round),
@@ -472,12 +474,35 @@ const submitAnswer = async (req, res) => {
             });
         }
 
-        // Validate answer (case insensitive trimming)
-        let isCorrect = false;
+        // Verify Server Timer using question's specific time limit
+        const duration = Number(question.timeLimit) || Number(session.questionDuration) || 10;
+        const questionStartTime =
+            session.questionStartedAt || session.startedAt || new Date();
+        const elapsedSeconds =
+            (Date.now() - new Date(questionStartTime).getTime()) / 1000;
+
+        if (elapsedSeconds > duration + 2.0) {
+            return res.status(400).json({
+                message: "Time limit expired for this question",
+            });
+        }
+
+        // Validate answer (case-insensitive trimming & text matching)
         const normalizedSelected = String(selectedAnswer).trim().toUpperCase();
         const normalizedCorrect = String(question.correctAnswer).trim().toUpperCase();
 
-        isCorrect = normalizedSelected === normalizedCorrect;
+        let isCorrect = normalizedSelected === normalizedCorrect;
+
+        // If not directly matching, check if option text matches
+        if (!isCorrect && question.options) {
+            const correctOptionText = question.options[normalizedCorrect]
+                ? String(question.options[normalizedCorrect]).trim().toUpperCase()
+                : "";
+            if (correctOptionText && normalizedSelected === correctOptionText) {
+                isCorrect = true;
+            }
+        }
+
         const techCoins = isCorrect ? (question.techCoins || 20) : 0;
 
         // Save answer record with version scope
@@ -687,17 +712,31 @@ const getGameAnswers = async (req, res) => {
 
         const { version } = await checkGameStatusAndPin(game, round);
 
-        // Fetch questions
-        const questions = await Question.find({ game, round }).sort({ questionNumber: 1 });
-
         // Determine target version (active event version or highest version attempted)
         const latestAnswerDoc = await GameAnswer.findOne({
             game,
             round,
             team: currentUser.team,
-        }).sort({ version: -1 });
+        }).sort({ version: -1 }).lean();
 
         const targetVersion = latestAnswerDoc ? Math.max(version, latestAnswerDoc.version) : version;
+
+        // Security Check: Block answers inspection if quiz session is still active
+        const session = await GameSession.findOne({
+            game,
+            round,
+            team: currentUser.team,
+            version: targetVersion,
+        }).lean();
+
+        if (session && session.status !== "completed" && session.currentQuestionNumber <= session.totalQuestions) {
+            return res.status(403).json({
+                message: "Answers review is only unlocked after completing the quiz round.",
+            });
+        }
+
+        // Fetch questions using lean query
+        const questions = await Question.find({ game, round }).sort({ questionNumber: 1 }).lean();
 
         // Fetch user's answers strictly for the target version
         const answers = await GameAnswer.find({
@@ -705,7 +744,7 @@ const getGameAnswers = async (req, res) => {
             round,
             team: currentUser.team,
             version: targetVersion,
-        });
+        }).lean();
 
         const answerMap = {};
         answers.forEach((ans) => {
