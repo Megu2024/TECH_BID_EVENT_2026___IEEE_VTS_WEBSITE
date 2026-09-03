@@ -2,7 +2,8 @@
   "name": "tech-bid-event-2026",
   "private": true,
   "scripts": {
-    "build": "cd client && npm install && npm run build"
+    "build": "cd client && npm install && npm run build",
+    "vercel-build": "cd client && npm install && npm run build && cd .. && node scripts/vercel-output.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

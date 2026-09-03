@@ -597,7 +597,8 @@ const submitAnswer = async (req, res) => {
             team.techCoins = calculated.remainingTechCoins;
             team.finalScore = calculated.finalScore;
             await team.save();
-            await recalculateAllTeamRanks();
+            // Run rank recalculation in the background to prevent UI blocking
+            recalculateAllTeamRanks().catch(err => console.error("Rank recalc error:", err));
         }
 
         // Advance to next question immediately

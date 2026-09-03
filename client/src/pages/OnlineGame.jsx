@@ -105,32 +105,37 @@ function OnlineGame() {
     const handleAnswerSubmit = async (answerKey) => {
         if (!question || selectedAnswer !== null || submitting) return;
 
-        // Immediate visual highlight
+        // Immediate visual response: stop timer, save selection, and hide question
         setSelectedAnswer(answerKey);
         setSubmitting(true);
+        if (timerRef.current) clearInterval(timerRef.current);
+        
+        // Optimistically hide the current question to feel instantaneous
+        const prevQuestion = question;
+        setQuestion(null);
 
         try {
             const result = await api.submitAnswer(
                 game,
                 round,
-                question.questionNumber,
+                prevQuestion.questionNumber,
                 answerKey
             );
 
-            await fetchScore();
+            // Fetch score in background to save roundtrip latency
+            fetchScore().catch(console.error);
 
             if (result.roundCompleted) {
                 setRoundCompleted(true);
-                setQuestion(null);
                 setTimeLeft(0);
                 return;
             }
 
-            // Immediately advance to next question
+            // Fetch the actual next question from server
             await fetchCurrentQuestion();
         } catch (err) {
             console.error("Submit answer error:", err);
-            // If server auto-advanced or rejected, sync question
+            // If error, restore question or fetch state
             await fetchCurrentQuestion();
         } finally {
             setSubmitting(false);
