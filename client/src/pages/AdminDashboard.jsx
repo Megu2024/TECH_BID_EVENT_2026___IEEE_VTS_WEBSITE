@@ -195,8 +195,12 @@ function AdminDashboard() {
             // High-performance single network round-trip (<15ms)
             const data = await api.getAdminBootstrap();
             
-            // Cache the fresh data
-            localStorage.setItem('adminBootstrapCacheOriginal', JSON.stringify(data));
+            // Cache the fresh data (wrap in try-catch for quota limits)
+            try {
+                localStorage.setItem('adminBootstrapCacheOriginal', JSON.stringify(data));
+            } catch (err) {
+                console.warn("Admin cache quota exceeded, skipping local cache.");
+            }
 
 
             setTeams(data.teams || []);
