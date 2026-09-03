@@ -229,9 +229,7 @@ function ParticipantDashboard() {
                         <div style={{ fontSize: "38px", fontWeight: "900", fontFamily: "var(--font-mono)", color: "#ffd700" }}>
                             {liquidWalletCoins}
                         </div>
-                        <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "6px" }}>
-                            Earned (🪙{totalGrossEarned}) − Spent (🪙{totalAuctionSpent})
-                        </div>
+                        
                     </div>
 
                     {/* Tech Cards Portfolio Value Card */}
@@ -295,227 +293,6 @@ function ParticipantDashboard() {
                             {leaderboardVisible
                                 ? <Link to="/leaderboard" style={{ color: "var(--primary)", fontWeight: "600" }}>View Full Leaderboard →</Link>
                                 : "Rankings officially gated by Admin"}
-                        </div>
-                    </div>
-                </div>
-
-                {/* ========================================================================= */}
-                {/* DEDICATED SCORE & COINS CALCULATION TRANSPARENCY HUB */}
-                {/* ========================================================================= */}
-                <div className="glass-card" style={{
-                    padding: "30px",
-                    marginBottom: "32px",
-                    border: "1px solid rgba(0, 240, 255, 0.25)",
-                    background: "linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(10, 15, 30, 0.95) 100%)",
-                }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "20px" }}>
-                        <div>
-                            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                                <span className="badge badge-cyan" style={{ fontSize: "11px" }}>TRANSPARENT SCORING ENGINE</span>
-                                <span className="badge badge-gold" style={{ fontSize: "11px" }}>REAL-TIME AUDIT</span>
-                            </div>
-                            <h2 style={{ fontSize: "22px", margin: 0, color: "#fff" }}>
-                                📊 How Your Score & Tech Coins Are Calculated
-                            </h2>
-                        </div>
-                        <span style={{ fontSize: "13px", color: "var(--text-dim)" }}>
-                            All game rounds update deterministically in real-time
-                        </span>
-                    </div>
-
-                    {/* Step-by-Step Round Story Breakdown */}
-                    <div style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                        gap: "14px",
-                        marginBottom: "24px",
-                    }}>
-                        {/* Round 1 Story */}
-                        <div style={{
-                            padding: "16px",
-                            borderRadius: "12px",
-                            background: "rgba(255, 255, 255, 0.02)",
-                            border: "1px solid rgba(0, 240, 255, 0.15)",
-                        }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                                <strong style={{ fontSize: "14px", color: "var(--primary)" }}>Round 1: Tri-Battle</strong>
-                                <span style={{ fontSize: "13px", fontWeight: "800", color: "#ffd700", fontFamily: "var(--font-mono)" }}>
-                                    +🪙 {round1Earned}
-                                </span>
-                            </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", color: "var(--text-muted)" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span>G1 (Quiz):</span>
-                                    <span style={{ color: r1g1 > 0 ? "#fff" : "var(--text-dim)", fontWeight: "600" }}>🪙 {r1g1}</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span>G2 (Connects):</span>
-                                    <span style={{ color: r1g2 > 0 ? "#fff" : "var(--text-dim)", fontWeight: "600" }}>🪙 {r1g2}</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span>G3 (Code):</span>
-                                    <span style={{ color: r1g3 > 0 ? "#fff" : "var(--text-dim)", fontWeight: "600" }}>🪙 {r1g3}</span>
-                                </div>
-                            </div>
-                            <div style={{ marginTop: "10px", fontSize: "11px", color: "var(--text-dim)", borderTop: "1px dashed rgba(255,255,255,0.08)", paddingTop: "6px" }}>
-                                🪙 Unattended games count as 0. Earned coins carried into Round 2 Auction.
-                            </div>
-                        </div>
-
-                        {/* Round 2 Story */}
-                        <div style={{
-                            padding: "16px",
-                            borderRadius: "12px",
-                            background: "rgba(255, 255, 255, 0.02)",
-                            border: "1px solid rgba(255, 215, 0, 0.2)",
-                        }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                                <strong style={{ fontSize: "14px", color: "var(--accent-gold)" }}>Round 2: Tech Cards</strong>
-                                <span style={{ fontSize: "13px", fontWeight: "800", color: "#e9d5ff", fontFamily: "var(--font-mono)" }}>
-                                    {team.techCards?.length || 0} Cards
-                                </span>
-                            </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", color: "var(--text-muted)" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span>Auction Purchase:</span>
-                                    <span style={{ color: "var(--accent-rose)", fontWeight: "600" }}>-🪙 {totalCardsBoughtCost}</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span>Market Valuation:</span>
-                                    <span style={{ color: "#ffd700", fontWeight: "700" }}>+🪙 {totalCardsMarketValue}</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span>Market Hike/Loss:</span>
-                                    <span style={{ color: netCardAppreciation >= 0 ? "#34d399" : "#f87171", fontWeight: "700" }}>
-                                        {netCardAppreciation >= 0 ? `+🪙 ${netCardAppreciation}` : `-🪙 ${Math.abs(netCardAppreciation)}`}
-                                    </span>
-                                </div>
-                            </div>
-                            <div style={{ marginTop: "10px", fontSize: "11px", color: "var(--text-dim)", borderTop: "1px dashed rgba(255,255,255,0.08)", paddingTop: "6px" }}>
-                                🎴 Purchase cost deducted from wallet; Market value added to Portfolio & Total Score.
-                            </div>
-                        </div>
-
-                        {/* Round 3 Story */}
-                        <div style={{
-                            padding: "16px",
-                            borderRadius: "12px",
-                            background: "rgba(255, 255, 255, 0.02)",
-                            border: "1px solid rgba(255, 255, 255, 0.08)",
-                        }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                                <strong style={{ fontSize: "14px", color: "#94a3b8" }}>Round 3: Strategy</strong>
-                                <span style={{ fontSize: "13px", fontWeight: "800", color: "#94a3b8", fontFamily: "var(--font-mono)" }}>
-                                    +🪙 0
-                                </span>
-                            </div>
-                            <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.4 }}>
-                                Problem statements shown on stadium projector. Strategic review for Round 5 target selection.
-                            </div>
-                            <div style={{ marginTop: "10px", fontSize: "11px", color: "var(--text-dim)", borderTop: "1px dashed rgba(255,255,255,0.08)", paddingTop: "6px" }}>
-                                🎯 No coins added in this round.
-                            </div>
-                        </div>
-
-                        {/* Round 4 Story */}
-                        <div style={{
-                            padding: "16px",
-                            borderRadius: "12px",
-                            background: "rgba(255, 255, 255, 0.02)",
-                            border: "1px solid rgba(192, 132, 252, 0.2)",
-                        }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                                <strong style={{ fontSize: "14px", color: "#c084fc" }}>Round 4: Dual Arena</strong>
-                                <span style={{ fontSize: "13px", fontWeight: "800", color: "#ffd700", fontFamily: "var(--font-mono)" }}>
-                                    +🪙 {round4Earned}
-                                </span>
-                            </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", color: "var(--text-muted)" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span>G1 (Jumbled):</span>
-                                    <span style={{ color: r4g1 > 0 ? "#fff" : "var(--text-dim)", fontWeight: "600" }}>🪙 {r4g1}</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span>G2 (Resistor):</span>
-                                    <span style={{ color: r4g2 > 0 ? "#fff" : "var(--text-dim)", fontWeight: "600" }}>🪙 {r4g2}</span>
-                                </div>
-                            </div>
-                            <div style={{ marginTop: "10px", fontSize: "11px", color: "var(--text-dim)", borderTop: "1px dashed rgba(255,255,255,0.08)", paddingTop: "6px" }}>
-                                ⚡ Earned coins directly boost available Tech Coins for Round 5 Auction.
-                            </div>
-                        </div>
-
-                        {/* Round 5 Story */}
-                        <div style={{
-                            padding: "16px",
-                            borderRadius: "12px",
-                            background: "rgba(255, 255, 255, 0.02)",
-                            border: "1px solid rgba(244, 63, 94, 0.2)",
-                        }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                                <strong style={{ fontSize: "14px", color: "#fb7185" }}>Round 5: Defense</strong>
-                                <span style={{ fontSize: "13px", fontWeight: "800", color: "#ffd700", fontFamily: "var(--font-mono)" }}>
-                                    🪙 {r5DefenseEarned - r5AuctionSpent >= 0 ? `+${r5DefenseEarned - r5AuctionSpent}` : `${r5DefenseEarned - r5AuctionSpent}`}
-                                </span>
-                            </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", color: "var(--text-muted)" }}>
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span>Problem Auction:</span>
-                                    <span style={{ color: "var(--accent-rose)", fontWeight: "600" }}>-🪙 {r5AuctionSpent}</span>
-                                </div>
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <span>Defense Justify:</span>
-                                    <span style={{ color: "#34d399", fontWeight: "700" }}>+🪙 {r5DefenseEarned}</span>
-                                </div>
-                            </div>
-                            <div style={{ marginTop: "10px", fontSize: "11px", color: "var(--text-dim)", borderTop: "1px dashed rgba(255,255,255,0.08)", paddingTop: "6px" }}>
-                                🛡️ Defense Rubric: 3/3 = 100, 2/3 = 65, 1/3 = 30, 0/3 = 0 Coins.
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Master Formulas Display Ribbon */}
-                    <div style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-                        gap: "16px",
-                    }}>
-                        {/* Formula 1: Liquid Wallet Tech Coins */}
-                        <div style={{
-                            padding: "18px 20px",
-                            borderRadius: "12px",
-                            background: "rgba(255, 215, 0, 0.05)",
-                            border: "1px solid rgba(255, 215, 0, 0.3)",
-                        }}>
-                            <div style={{ fontSize: "12px", fontWeight: "700", color: "var(--accent-gold)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
-                                🪙 1. Available Wallet Tech Coins Formula
-                            </div>
-                            <div style={{ fontSize: "13px", color: "var(--text-main)", lineHeight: 1.6, fontFamily: "var(--font-mono)" }}>
-                                <div><strong>Total Earned:</strong> (R1: {round1Earned} + R4: {round4Earned} + R5: {r5DefenseEarned}) = <strong>🪙 {totalGrossEarned}</strong></div>
-                                <div><strong>Total Spent:</strong> (Cards: {totalCardsBoughtCost} + Statement: {r5AuctionSpent}) = <strong>🪙 {totalAuctionSpent}</strong></div>
-                                <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid rgba(255,215,0,0.2)", fontSize: "14px", color: "#ffd700", fontWeight: "800" }}>
-                                    Wallet Coins = {totalGrossEarned} − {totalAuctionSpent} = 🪙 {liquidWalletCoins}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Formula 2: Grand Total Score */}
-                        <div style={{
-                            padding: "18px 20px",
-                            borderRadius: "12px",
-                            background: "rgba(0, 240, 255, 0.05)",
-                            border: "1px solid rgba(0, 240, 255, 0.3)",
-                        }}>
-                            <div style={{ fontSize: "12px", fontWeight: "700", color: "var(--primary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>
-                                ⭐ 2. Grand Final Competition Score Formula
-                            </div>
-                            <div style={{ fontSize: "13px", color: "var(--text-main)", lineHeight: 1.6, fontFamily: "var(--font-mono)" }}>
-                                <div><strong>Wallet Coins Balance:</strong> 🪙 {liquidWalletCoins}</div>
-                                <div><strong>Tech Cards Portfolio Market Value:</strong> 🪙 {totalCardsMarketValue}</div>
-                                <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: "1px solid rgba(0,240,255,0.2)", fontSize: "14px", color: "#00f0ff", fontWeight: "800" }}>
-                                    Grand Total Score = {liquidWalletCoins} + {totalCardsMarketValue} = ⭐ {finalScore}
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -585,9 +362,7 @@ function ParticipantDashboard() {
                                         🪙 {team.round1?.game1Score || 0}
                                     </span>
                                 </div>
-                                <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "16px" }}>
-                                    15 Multiple Choice Questions • 10s per question • 20 Tech Coins / Q
-                                </p>
+                                
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                     {r1g1Session.status === "completed" ? (
                                         <button
@@ -628,9 +403,7 @@ function ParticipantDashboard() {
                                         🪙 {team.round1?.game2Score || 0}
                                     </span>
                                 </div>
-                                <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "16px" }}>
-                                    Physical evaluation administered directly by Admin judges (1-4 words scoring).
-                                </p>
+                                
                                 <div style={{ fontSize: "12px", color: "var(--text-dim)", padding: "10px", background: "rgba(255, 255, 255, 0.03)", borderRadius: "8px", textAlign: "center" }}>
                                     {team.round1?.game2Score > 0 ? `✅ Evaluated (${team.round1.game2Score} Coins)` : "⏳ Awaiting Admin Evaluation"}
                                 </div>
@@ -644,9 +417,7 @@ function ParticipantDashboard() {
                                         🪙 {team.round1?.game3Score || 0}
                                     </span>
                                 </div>
-                                <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "16px" }}>
-                                    Fast-paced code snippets, syntax analysis, and debugging challenges.
-                                </p>
+                                
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                     {r1g3Session.status === "completed" ? (
                                         <button
@@ -756,9 +527,7 @@ function ParticipantDashboard() {
                                         🪙 {team.round4?.game1Score || 0}
                                     </span>
                                 </div>
-                                <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "16px" }}>
-                                    Unscramble high-level vehicular, embedded, and software terminology.
-                                </p>
+                                
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                     {r4g1Session.status === "completed" ? (
                                         <button
@@ -799,9 +568,7 @@ function ParticipantDashboard() {
                                         🪙 {team.round4?.game2Score || 0}
                                     </span>
                                 </div>
-                                <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "16px" }}>
-                                    Practical circuit calculation & multimeter evaluation administered by Admin judges.
-                                </p>
+                                
                                 <div style={{ fontSize: "12px", color: "var(--text-dim)", padding: "10px", background: "rgba(255, 255, 255, 0.03)", borderRadius: "8px", textAlign: "center" }}>
                                     {team.round4?.game2Score > 0 ? `✅ Evaluated (${team.round4.game2Score} Coins)` : "⏳ Awaiting Admin Evaluation"}
                                 </div>
@@ -829,11 +596,7 @@ function ParticipantDashboard() {
                                 <div style={{ fontSize: "16px", fontWeight: "700", color: "#fff", marginTop: "8px" }}>
                                     {team.problemStatement || team.round5?.problemStatement || "⏳ Bidding in progress during Round 5 Auction"}
                                 </div>
-                                {team.round5?.auctionCoinsSpent > 0 && (
-                                    <div style={{ marginTop: "10px", fontSize: "13px", color: "var(--accent-rose)" }}>
-                                        Coins Spent in Auction: -🪙 {team.round5.auctionCoinsSpent}
-                                    </div>
-                                )}
+                                
                             </div>
 
                             <div style={{ padding: "20px", borderRadius: "12px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
