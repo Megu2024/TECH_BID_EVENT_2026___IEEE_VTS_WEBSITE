@@ -53,7 +53,6 @@ function ContentManager({
     const [questionViewMode, setQuestionViewMode] = useState("matrix"); // 'matrix' | 'list'
     const [bulkCoinsDraft, setBulkCoinsDraft] = useState({});
     const [bulkCustomTime, setBulkCustomTime] = useState(12);
-    const [savedSuccessId, setSavedSuccessId] = useState(null);
     const [newQuestion, setNewQuestion] = useState({
         game: 1,
         round: 1,
