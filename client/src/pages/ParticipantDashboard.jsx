@@ -227,7 +227,7 @@ function ParticipantDashboard() {
                             <span style={{ fontSize: "26px" }}>🪙</span>
                         </div>
                         <div style={{ fontSize: "38px", fontWeight: "900", fontFamily: "var(--font-mono)", color: "#ffd700" }}>
-                            {liquidWalletCoins}
+                            {liquidWalletCoins + totalCardsMarketValue}
                         </div>
                         
                     </div>
@@ -270,7 +270,7 @@ function ParticipantDashboard() {
                             {finalScore}
                         </div>
                         <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "6px" }}>
-                            Wallet Coins (🪙{liquidWalletCoins}) + Cards (🪙{totalCardsMarketValue})
+                            Cumulative Score
                         </div>
                     </div>
 
