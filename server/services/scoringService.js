@@ -7,9 +7,9 @@ const TechCard = require("../models/TechCard");
  * Transparent Mathematical Formula:
  * 1. Total Earned Coins = (R1 G1 + R1 G2 + R1 G3) + (R4 G1 + R4 G2) + R5 Final Defense Score
  * 2. Total Auction Spent = (Sum of Tech Cards Purchase Costs) + (R5 Problem Statement Auction Cost)
- * 3. Remaining Tech Coins (Wallet) = Max(0, Total Earned Coins - Total Auction Spent)
- * 4. Tech Cards Portfolio Market Value = Sum of market values of all owned Tech Cards
- * 5. Grand Final Score = Remaining Tech Coins + Tech Cards Portfolio Market Value
+ * 3. Market Profit/Loss = Sum(Current Market Value) - Sum(Base Value) for all owned cards
+ * 4. Account Balance (Wallet) = Max(0, Total Earned Coins - Total Auction Spent + Market Profit/Loss)
+ * 5. Grand Final Score = Account Balance (Wallet already includes market P/L)
  */
 const calculateTeamScore = (team) => {
     const r1g1 = Number(team.round1?.game1Score || 0);
@@ -33,14 +33,23 @@ const calculateTeamScore = (team) => {
         0
     );
 
+    // Sum of base prices of all Tech Cards owned (initial portfolio value at purchase)
+    const cardsBaseValue = (team.techCards || []).reduce(
+        (sum, card) => sum + Number(card.basePrice || 0),
+        0
+    );
+
     // Sum of current market values of all Tech Cards owned by the team
     const cardsMarketValue = (team.techCards || []).reduce(
         (sum, card) => {
-            const market = Number(card.marketValue !== undefined && card.marketValue !== null ? card.marketValue : (card.boughtPrice || card.basePrice || 0));
+            const market = Number(card.marketValue !== undefined && card.marketValue !== null ? card.marketValue : (card.basePrice || 0));
             return sum + market;
         },
         0
     );
+
+    // Net market profit/loss = how much cards appreciated/depreciated from their base prices
+    const marketProfitLoss = cardsMarketValue - cardsBaseValue;
 
     // Total gross coins earned across all rounds (unattended games default to 0)
     const totalEarnedCoins = round1Total + round4Total + round5Eval;
@@ -48,11 +57,13 @@ const calculateTeamScore = (team) => {
     // Total coins spent across Round 2 & Round 5 auctions
     const totalAuctionSpent = cardsBoughtCost + r5AuctionSpent;
 
-    // Liquid remaining Tech Coins in team wallet (without card market value added into liquid coins)
-    const remainingTechCoins = Math.max(0, totalEarnedCoins - totalAuctionSpent);
+    // Account Balance = Earned - BoughtPrices - R5Spent + MarketProfitLoss
+    // This means: when market rises, wallet rises; when market falls, wallet falls.
+    // Account balance cannot go below 0.
+    const remainingTechCoins = Math.max(0, totalEarnedCoins - totalAuctionSpent + marketProfitLoss);
 
-    // Grand final total score combining remaining liquid coins and tech card portfolio market value
-    const finalScore = remainingTechCoins + cardsMarketValue;
+    // Final Score = Account Balance (wallet already includes market P/L, no double-counting)
+    const finalScore = remainingTechCoins;
 
     return {
         round1Total,
@@ -60,8 +71,10 @@ const calculateTeamScore = (team) => {
         round5Eval,
         totalEarnedCoins,
         cardsBoughtCost,
+        cardsBaseValue,
         cardsMarketValue,
         techCardsValue: cardsMarketValue,
+        marketProfitLoss,
         r5AuctionSpent,
         totalAuctionSpent,
         remainingTechCoins,

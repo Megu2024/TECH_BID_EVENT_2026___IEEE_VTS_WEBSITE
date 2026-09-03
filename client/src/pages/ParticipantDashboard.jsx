@@ -185,12 +185,17 @@ function ParticipantDashboard() {
         0
     );
 
-    const totalCardsMarketValue = (team.techCards || []).reduce(
-        (sum, card) => sum + Number(card.marketValue !== undefined && card.marketValue !== null ? card.marketValue : (card.boughtPrice || card.basePrice || 0)),
+    const totalCardsBaseValue = (team.techCards || []).reduce(
+        (sum, card) => sum + Number(card.basePrice || 0),
         0
     );
 
-    const netCardAppreciation = totalCardsMarketValue - totalCardsBoughtCost;
+    const totalCardsMarketValue = (team.techCards || []).reduce(
+        (sum, card) => sum + Number(card.marketValue !== undefined && card.marketValue !== null ? card.marketValue : (card.basePrice || 0)),
+        0
+    );
+
+    const netCardAppreciation = totalCardsMarketValue - totalCardsBaseValue;
     const totalGrossEarned = round1Earned + round4Earned + r5DefenseEarned;
     const totalAuctionSpent = totalCardsBoughtCost + r5AuctionSpent;
     const liquidWalletCoins = team.techCoins || 0;
@@ -255,7 +260,7 @@ function ParticipantDashboard() {
                             <span style={{ fontSize: "26px" }}>🪙</span>
                         </div>
                         <div style={{ fontSize: "38px", fontWeight: "900", fontFamily: "var(--font-mono)", color: "#ffd700" }}>
-                            {liquidWalletCoins + totalCardsMarketValue}
+                            {liquidWalletCoins}
                         </div>
                         
                     </div>
@@ -277,7 +282,7 @@ function ParticipantDashboard() {
                             🪙 {totalCardsMarketValue}
                         </div>
                         <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "6px" }}>
-                            {team.techCards?.length || 0} Cards • Cost: 🪙{totalCardsBoughtCost} ({netCardAppreciation >= 0 ? `+🪙${netCardAppreciation} Gain` : `-🪙${Math.abs(netCardAppreciation)} Loss`})
+                            {team.techCards?.length || 0} Cards • Base Value: 🪙{totalCardsBaseValue} ({netCardAppreciation >= 0 ? `+🪙${netCardAppreciation} Gain` : `-🪙${Math.abs(netCardAppreciation)} Loss`})
                         </div>
                     </div>
 
