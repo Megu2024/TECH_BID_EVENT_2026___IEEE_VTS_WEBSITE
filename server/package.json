@@ -13,6 +13,7 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.4",
+    "netlify": "^27.4.2",
     "nodemailer": "^9.1.0",
     "vercel": "^59.11.2"
   },
