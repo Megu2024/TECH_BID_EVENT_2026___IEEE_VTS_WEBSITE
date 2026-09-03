@@ -372,37 +372,33 @@ const getCurrentQuestion = async (req, res) => {
         }
 
         // Calculate elapsed time for this team's current question
-        if (!session.questionStartedAt) {
-            session.questionStartedAt = new Date();
-            await session.save();
-        }
+        let remainingSeconds = duration;
+        
+        if (session.questionStartedAt) {
+            const questionStartTime = session.questionStartedAt;
+            const elapsedSeconds = (Date.now() - new Date(questionStartTime).getTime()) / 1000;
+            remainingSeconds = Math.max(0, Math.ceil(duration - elapsedSeconds));
 
-        const questionStartTime = session.questionStartedAt;
+            // Auto-advance if time has expired
+            if (remainingSeconds <= 0) {
+                if (session.currentQuestionNumber >= session.totalQuestions) {
+                    session.currentQuestionNumber = session.totalQuestions + 1;
+                    session.status = "completed";
+                    await session.save();
 
-        const elapsedSeconds =
-            (Date.now() - new Date(questionStartTime).getTime()) / 1000;
+                    return res.status(200).json({
+                        status: "completed",
+                        message: "Game round completed",
+                    });
+                }
 
-        const remainingSeconds = Math.max(0, Math.ceil(duration - elapsedSeconds));
-
-        // Auto-advance if time has expired
-        if (remainingSeconds <= 0) {
-            if (session.currentQuestionNumber >= session.totalQuestions) {
-                session.currentQuestionNumber = session.totalQuestions + 1;
-                session.status = "completed";
+                session.currentQuestionNumber += 1;
+                session.questionStartedAt = null;
                 await session.save();
 
-                return res.status(200).json({
-                    status: "completed",
-                    message: "Game round completed",
-                });
+                // Re-run for the new question
+                return getCurrentQuestion(req, res);
             }
-
-            session.currentQuestionNumber += 1;
-            session.questionStartedAt = null;
-            await session.save();
-
-            // Re-run for the new question
-            return getCurrentQuestion(req, res);
         }
 
         return res.status(200).json({
@@ -418,6 +414,43 @@ const getCurrentQuestion = async (req, res) => {
         return res.status(500).json({
             message: "Server error while fetching current question",
         });
+    }
+};
+
+// ============================================================
+// START QUESTION TIMER
+// ============================================================
+const startQuestionTimer = async (req, res) => {
+    try {
+        const { game, round } = req.body;
+        const currentUser = await User.findById(req.user._id);
+
+        if (!currentUser || !currentUser.team) {
+            return res.status(400).json({ message: "You are not part of a team" });
+        }
+
+        const { version } = await checkGameStatusAndPin(game, round);
+        const session = await GameSession.findOne({
+            game,
+            round,
+            team: currentUser.team,
+            version,
+        });
+
+        if (!session || session.status !== "running") {
+            return res.status(400).json({ message: "Game session not running" });
+        }
+
+        // Only set it if it hasn't been set yet for this question
+        if (!session.questionStartedAt) {
+            session.questionStartedAt = new Date();
+            await session.save();
+        }
+
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error("Start question timer error:", error);
+        return res.status(500).json({ message: "Server error while starting timer" });
     }
 };
 
@@ -878,4 +911,5 @@ module.exports = {
     getGameSessionStatus,
     getGameAnswers,
     endGame,
+    startQuestionTimer,
 };

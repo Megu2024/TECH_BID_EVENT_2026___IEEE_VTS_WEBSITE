@@ -203,6 +203,13 @@ export const api = {
             headers: getHeaders(true),
         }).then(handleResponse),
 
+    startQuestionTimer: (game, round) =>
+        fetch(`${API_BASE_URL}/api/game/start-timer`, {
+            method: "POST",
+            headers: getHeaders(true),
+            body: JSON.stringify({ game, round }),
+        }).then(handleResponse),
+
     submitAnswer: (game, round, questionNumber, selectedAnswer) =>
         fetch(`${API_BASE_URL}/api/game/answer`, {
             method: "POST",

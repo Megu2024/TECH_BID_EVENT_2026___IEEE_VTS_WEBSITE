@@ -155,6 +155,9 @@ function OnlineGame() {
     useEffect(() => {
         if (!gameStarted || !question || roundCompleted) return;
 
+        // Tell server that frontend rendering is complete and timer should start
+        api.startQuestionTimer(game, round).catch(err => console.error("Failed to start server timer", err));
+
         if (timerRef.current) clearInterval(timerRef.current);
 
         timerRef.current = setInterval(() => {
