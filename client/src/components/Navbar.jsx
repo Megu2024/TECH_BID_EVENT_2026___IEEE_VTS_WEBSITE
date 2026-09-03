@@ -200,7 +200,7 @@ function Navbar() {
                             fontSize: "14px",
                         }}>
                             <span>🪙</span>
-                            <span>{team ? team.techCoins : 0}</span>
+                            <span>{team ? team.finalScore : 0}</span>
                         </div>
                     )}
 

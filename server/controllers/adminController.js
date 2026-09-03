@@ -116,6 +116,17 @@ const adminLogin = async (req, res) => {
 const getAdminProfile = async (req, res) => {
     try {
         const adminId = req.admin._id || req.admin.id;
+        
+        if (adminId === "admin_master_session") {
+            return res.status(200).json({
+                admin: {
+                    _id: "admin_master_session",
+                    name: "Master Admin",
+                    role: "admin",
+                }
+            });
+        }
+
         let admin = await Admin.findById(adminId).select("-password");
 
         if (!admin) {

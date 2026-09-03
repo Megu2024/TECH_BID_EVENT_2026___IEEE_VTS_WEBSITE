@@ -29,34 +29,62 @@ function ParticipantDashboard() {
     const [r1g3Session, setR1g3Session] = useState({ status: "not_started" });
     const [r4g1Session, setR4g1Session] = useState({ status: "not_started" });
 
-    const loadDashboardData = async () => {
+    const loadDashboardData = async (forceSpinner = false) => {
         try {
-            setLoading(true);
+            // Optimistic fast-load from localStorage
+            const cachedData = localStorage.getItem('participantDashboardCache');
+            if (cachedData && !forceSpinner) {
+                try {
+                    const parsed = JSON.parse(cachedData);
+                    setEventStatus(parsed.statusData || null);
+                    setLeaderboardVisible(parsed.statusData?.leaderboardVisible || false);
+                    setR1g1Session(parsed.s1 || { status: "not_started" });
+                    setR1g3Session(parsed.s3 || { status: "not_started" });
+                    setR4g1Session(parsed.s4 || { status: "not_started" });
+                    setLoading(false); // Instantly remove loading screen
+                } catch(e) {}
+            } else {
+                setLoading(true);
+            }
+
             await refreshTeam();
             const statusData = await api.getEventStatus();
             setEventStatus(statusData);
             setLeaderboardVisible(statusData.leaderboardVisible);
 
             // Fetch session completion statuses
+            let s1 = { status: "not_started" }, s3 = { status: "not_started" }, s4 = { status: "not_started" };
             try {
-                const s1 = await api.getGameSessionStatus(1, 1);
+                s1 = await api.getGameSessionStatus(1, 1);
                 setR1g1Session(s1);
             } catch (e) {
                 console.error("R1G1 session status error", e);
             }
 
             try {
-                const s3 = await api.getGameSessionStatus(3, 1);
+                s3 = await api.getGameSessionStatus(3, 1);
                 setR1g3Session(s3);
             } catch (e) {
                 console.error("R1G3 session status error", e);
             }
 
             try {
-                const s4 = await api.getGameSessionStatus(1, 4);
+                s4 = await api.getGameSessionStatus(1, 4);
                 setR4g1Session(s4);
             } catch (e) {
                 console.error("R4G1 session status error", e);
+            }
+
+            // Cache the fresh data
+            try {
+                localStorage.setItem('participantDashboardCache', JSON.stringify({
+                    statusData,
+                    s1,
+                    s3,
+                    s4
+                }));
+            } catch (err) {
+                console.warn("Local cache quota exceeded.");
             }
 
         } catch (err) {

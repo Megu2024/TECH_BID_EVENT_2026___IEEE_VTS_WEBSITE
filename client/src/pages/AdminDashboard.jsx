@@ -297,7 +297,7 @@ function AdminDashboard() {
             setError("");
             await api.recalculateRanks();
             setMessage("Deterministic ranks and final scores recalculated!");
-            await loadAllData();
+            loadAllData();
         } catch (err) {
             setError(err.message || "Rank recalculation failed");
         } finally {
@@ -321,7 +321,7 @@ function AdminDashboard() {
                     setMessage(`Team "${teamName}" and all associated member accounts deleted successfully!`);
                     setDetailsModalOpen(false);
                     setSelectedTeam(null);
-                    await loadAllData();
+                    loadAllData();
                 } catch (err) {
                     setError(err.message || "Failed to delete team");
                 } finally {
@@ -366,7 +366,7 @@ function AdminDashboard() {
             });
 
             setMessage(`Round 1 Game 2 successfully evaluated! Awarded 🪙 ${totalR1G2Coins} Tech Coins.`);
-            await loadAllData();
+            loadAllData();
         } catch (err) {
             setError(err.message || "Failed to save Round 1 Game 2 score");
         } finally {
@@ -389,7 +389,7 @@ function AdminDashboard() {
             });
             setMessage(`Round 4 Game 2 score recorded: 🪙 ${r4g2TotalCoins} Coins!`);
             setR4g2ModalOpen(false);
-            await loadAllData();
+            loadAllData();
         } catch (err) {
             setError(err.message || "Scoring failed");
         } finally {
@@ -436,7 +436,7 @@ function AdminDashboard() {
             setSelectedTeam(res.team);
             setMessage(`Assigned "${selectedCardName}" (Bought: 🪙 ${cardBoughtValue}) to ${selectedTeam.teamName}!`);
             setCardModalOpen(false);
-            await loadAllData();
+            loadAllData();
         } catch (err) {
             setError(err.message || "Card assignment failed");
         } finally {
@@ -466,7 +466,7 @@ function AdminDashboard() {
 
                     setSelectedTeam(res.team);
                     setMessage(`Removed "${cardName}" from ${selectedTeam.teamName}. Tech coins & ranks updated!`);
-                    await loadAllData();
+                    loadAllData();
                 } catch (err) {
                     setError(err.message || "Failed to remove card from team");
                 } finally {
@@ -500,7 +500,7 @@ function AdminDashboard() {
                 setSelectedTeam(res.team);
                 setTeams((prev) => prev.map((t) => (t._id === res.team._id ? res.team : t)));
             }
-            await loadAllData();
+            loadAllData();
         } catch (err) {
             setError(err.message || "Round 5 scoring failed");
         } finally {
@@ -533,7 +533,7 @@ function AdminDashboard() {
             setMessage("");
             await api.saveImageSet(editableImageSet);
             setMessage(`${editableImageSet.setName} saved successfully!`);
-            await refreshImageSets();
+            refreshImageSets();
         } catch (err) {
             setError(err.message || "Failed to save Image Set");
         } finally {
@@ -575,7 +575,7 @@ function AdminDashboard() {
                 techCoins: 20,
                 timeLimit: 10,
             });
-            await refreshQuestions();
+            refreshQuestions();
         } catch (err) {
             setError(err.message || "Failed to save question");
         } finally {
@@ -650,7 +650,7 @@ function AdminDashboard() {
             setMessage("");
             await api.batchUpdateQuestionsTimeLimit({ ids: targetIds, timeLimit: timeVal });
             setMessage(`⏱️ Successfully updated time limit to ${timeVal}s for ${targetIds.length} questions!`);
-            await refreshQuestions();
+            refreshQuestions();
         } catch (err) {
             setError(err.message || "Failed to batch update time limit");
         } finally {
@@ -668,7 +668,7 @@ function AdminDashboard() {
             await api.deleteQuestion(deleteConfirmId);
             setMessage("Question deleted successfully!");
             setDeleteConfirmId(null);
-            await refreshQuestions();
+            refreshQuestions();
         } catch (err) {
             setError(err.message || "Failed to delete question");
         } finally {
@@ -783,7 +783,7 @@ function AdminDashboard() {
             setSavedSuccessId(qId);
             setTimeout(() => setSavedSuccessId(null), 2500);
             setMessage(`🪙 Question Q${qNum} saved: ${draft.techCoins} Tech Coins (${draft.timeLimit}s timer)!`);
-            await refreshQuestions();
+            refreshQuestions();
         } catch (err) {
             setError(err.message || "Failed to update question coins");
         } finally {
@@ -805,7 +805,7 @@ function AdminDashboard() {
 
             await api.bulkUpdateQuestions(updates);
             setMessage(`✨ Successfully calibrated and saved Tech Coins for all ${updates.length} questions!`);
-            await refreshQuestions();
+            refreshQuestions();
         } catch (err) {
             setError(err.message || "Failed to save questions in bulk");
         } finally {
@@ -848,7 +848,7 @@ function AdminDashboard() {
                 description: "",
             });
 
-            await refreshTechCards();
+            refreshTechCards();
         } catch (err) {
             setError(err.message || "Failed to save Tech Card");
         } finally {
@@ -896,7 +896,7 @@ function AdminDashboard() {
                     if (editingTechCard?._id === id) {
                         handleCancelEditTechCard();
                     }
-                    await refreshTechCards();
+                    refreshTechCards();
                 } catch (err) {
                     setError(err.message || "Failed to delete Tech Card");
                 } finally {
@@ -976,7 +976,7 @@ function AdminDashboard() {
 
             const res = await api.bulkUpdateTechCardsMarket(updates);
             setMessage(res.message || `Successfully updated market values for ${updates.length} Tech Cards and recalculated all team scores!`);
-            await loadAllData();
+            loadAllData();
         } catch (err) {
             setError(err.message || "Failed to update market values");
         } finally {
@@ -1016,7 +1016,7 @@ function AdminDashboard() {
                     await Promise.all(selectedQuestionIds.map((id) => api.deleteQuestion(id)));
                     setMessage(`Successfully deleted ${selectedQuestionIds.length} questions!`);
                     setSelectedQuestionIds([]);
-                    await refreshQuestions();
+                    refreshQuestions();
                 } catch (err) {
                     setError(err.message || "Failed to delete selected questions");
                 } finally {
@@ -1041,7 +1041,7 @@ function AdminDashboard() {
                     await api.deleteQuestion(id);
                     setSelectedQuestionIds((prev) => prev.filter((item) => item !== id));
                     setMessage("Question deleted successfully!");
-                    await refreshQuestions();
+                    refreshQuestions();
                 } catch (err) {
                     setError(err.message || "Failed to delete question");
                 } finally {
@@ -1077,8 +1077,8 @@ function AdminDashboard() {
                 description: "",
             });
 
-            await refreshProblems();
-            await loadAllData();
+            refreshProblems();
+            loadAllData();
         } catch (err) {
             setError(err.message || "Failed to save Problem Statement");
         } finally {
@@ -1140,8 +1140,8 @@ function AdminDashboard() {
                     await api.bulkDeleteProblemStatements(selectedProblemIds);
                     setSelectedProblemIds([]);
                     setMessage("Selected problem statements deleted successfully!");
-                    await refreshProblems();
-                    await loadAllData();
+                    refreshProblems();
+                    loadAllData();
                 } catch (err) {
                     setError(err.message || "Failed to delete selected problem statements");
                 } finally {
@@ -1169,8 +1169,8 @@ function AdminDashboard() {
                     if (editingProblemStatement?._id === id) {
                         handleCancelEditProblemStatement();
                     }
-                    await refreshProblems();
-                    await loadAllData();
+                    refreshProblems();
+                    loadAllData();
                 } catch (err) {
                     setError(err.message || "Failed to delete problem statement");
                 } finally {
@@ -1374,7 +1374,7 @@ function AdminDashboard() {
                                                     fontWeight: "800",
                                                     color: "#ffd700",
                                                 }}>
-                                                    🪙 {t.techCoins || 0}
+                                                    🪙 {t.finalScore || 0}
                                                 </div>
                                             </div>
 
@@ -4096,7 +4096,7 @@ function AdminDashboard() {
                                 </h2>
                             </div>
                             <div style={{ fontSize: "20px", fontWeight: "900", color: "#ffd700", fontFamily: "var(--font-mono)" }}>
-                                🪙 {selectedTeam.techCoins || 0} Coins
+                                🪙 {selectedTeam.finalScore || 0} Coins
                             </div>
                         </div>
 

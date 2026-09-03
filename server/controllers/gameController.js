@@ -189,7 +189,7 @@ const startGame = async (req, res) => {
             session.currentQuestionNumber = isResumingSameVersion ? session.currentQuestionNumber : 1;
             session.questionDuration = isResumingSameVersion ? (session.questionDuration || initialDuration) : initialDuration;
             session.startedAt = isResumingSameVersion ? session.startedAt : now;
-            session.questionStartedAt = isResumingSameVersion ? session.questionStartedAt : now;
+            session.questionStartedAt = isResumingSameVersion ? session.questionStartedAt : null;
             session.status = "running";
             await session.save();
 
@@ -227,7 +227,7 @@ const startGame = async (req, res) => {
                     currentQuestionNumber: 1,
                     questionDuration: 10,
                     startedAt: now,
-                    questionStartedAt: now,
+                    questionStartedAt: null,
                     status: "running",
                     version,
                 });
@@ -372,8 +372,12 @@ const getCurrentQuestion = async (req, res) => {
         }
 
         // Calculate elapsed time for this team's current question
-        const questionStartTime =
-            session.questionStartedAt || session.startedAt || new Date();
+        if (!session.questionStartedAt) {
+            session.questionStartedAt = new Date();
+            await session.save();
+        }
+
+        const questionStartTime = session.questionStartedAt;
 
         const elapsedSeconds =
             (Date.now() - new Date(questionStartTime).getTime()) / 1000;
@@ -394,7 +398,7 @@ const getCurrentQuestion = async (req, res) => {
             }
 
             session.currentQuestionNumber += 1;
-            session.questionStartedAt = new Date();
+            session.questionStartedAt = null;
             await session.save();
 
             // Re-run for the new question
@@ -579,7 +583,7 @@ const submitAnswer = async (req, res) => {
         }
 
         session.currentQuestionNumber += 1;
-        session.questionStartedAt = new Date();
+        session.questionStartedAt = null;
         await session.save();
 
         return res.status(201).json({

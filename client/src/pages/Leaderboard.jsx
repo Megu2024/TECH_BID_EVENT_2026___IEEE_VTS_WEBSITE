@@ -20,7 +20,15 @@ function Leaderboard() {
         try {
             setLoading(true);
             setError("");
-            const data = await api.getPublicLeaderboard();
+            let data;
+            const isAdmin = user?.role === "admin";
+            
+            if (isAdmin) {
+                const teams = await api.getAllTeams();
+                data = { visible: true, leaderboard: teams };
+            } else {
+                data = await api.getPublicLeaderboard();
+            }
             setVisible(data.visible);
 
             // Deterministically sort teams: Highest Final Score, then Highest Tech Coins

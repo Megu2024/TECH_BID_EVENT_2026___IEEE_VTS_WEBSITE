@@ -18,14 +18,14 @@ function ProjectorView() {
             setLoading(true);
             const [probData, lbData, cardsData] = await Promise.all([
                 api.getPublicProblemStatements().catch(() => ({ statements: [] })),
-                api.getPublicLeaderboard().catch(() => ({ leaderboard: [] })),
+                api.getAllTeams().catch(() => ([])),
                 api.getPublicTechCards().catch(() => ({ techCards: [] })),
             ]);
 
             setStatements(probData.statements || []);
             setTechCards(cardsData.cards || cardsData.techCards || []);
 
-            const rawTeams = lbData.leaderboard || [];
+            const rawTeams = lbData || [];
             const sorted = [...rawTeams].sort((a, b) => {
                 const scoreDiff = (b.finalScore || 0) - (a.finalScore || 0);
                 if (scoreDiff !== 0) return scoreDiff;

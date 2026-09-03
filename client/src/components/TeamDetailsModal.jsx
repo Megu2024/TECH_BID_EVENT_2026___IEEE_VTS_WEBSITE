@@ -59,7 +59,7 @@ function TeamDetailsModal({ team, isOpen, onClose }) {
                         </h2>
                     </div>
                     <div style={{ fontSize: "20px", fontWeight: "900", color: "#ffd700", fontFamily: "var(--font-mono)" }}>
-                        🪙 {team.techCoins || 0} Coins
+                        🪙 {team.finalScore || 0} Coins
                     </div>
                 </div>
 
