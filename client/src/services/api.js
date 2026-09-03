@@ -3,7 +3,8 @@ export const getApiBaseUrl = () => {
         return import.meta.env.VITE_API_URL.replace(/\/+$/, "");
     }
     if (import.meta.env.PROD || (typeof window !== "undefined" && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1")) {
-        return "https://tech-bid-event-2026-ieee-vts-website.onrender.com";
+        // Use relative path to hit Vercel Serverless Functions
+        return "";
     }
     return "http://localhost:5000";
 };

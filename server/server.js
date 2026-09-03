@@ -60,6 +60,16 @@ app.use("/api/questions", questionRoutes);
 app.use("/api/game", gameRoutes);
 app.use("/api/catalog", catalogRoutes);
 
+// Apply DB connection middleware for serverless
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+    } catch (err) {
+        console.error("DB connection error in middleware:", err);
+    }
+    next();
+});
+
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
@@ -70,8 +80,7 @@ const startServer = async () => {
     try {
         await connectDB();
     } catch (error) {
-        console.error("⚠️ Initial MongoDB Atlas connection failed (likely IP whitelist or network issue).");
-        console.error("💡 If your IP changed, add your IP in MongoDB Atlas -> Network Access -> Add Current IP Address (or 0.0.0.0/0).");
+        console.error("⚠️ Initial MongoDB Atlas connection failed.");
         
         // Auto-retry connection in background every 10 seconds
         const retryInterval = setInterval(async () => {
@@ -89,4 +98,8 @@ const startServer = async () => {
     }
 };
 
-startServer();
+if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+    startServer();
+}
+
+module.exports = app;
