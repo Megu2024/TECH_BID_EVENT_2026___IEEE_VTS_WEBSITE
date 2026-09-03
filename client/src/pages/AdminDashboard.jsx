@@ -2512,10 +2512,6 @@ function AdminDashboard() {
                                                                     <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>Total Pool</span>
                                                                     <strong style={{ fontSize: "16px", color: "var(--accent-gold)", fontFamily: "var(--font-mono)" }}>🪙 {totalCoins} Coins</strong>
                                                                 </div>
-                                                                <div style={{ padding: "6px 14px", background: "rgba(0, 240, 255, 0.08)", border: "1px solid rgba(0, 240, 255, 0.25)", borderRadius: "8px" }}>
-                                                                    <span style={{ fontSize: "11px", color: "var(--text-muted)", display: "block" }}>Active Timing</span>
-                                                                    <strong style={{ fontSize: "16px", color: "var(--primary)", fontFamily: "var(--font-mono)" }}>⏱️ {currentTiming}s / Question</strong>
-                                                                </div>
                                                             </div>
 
                                                             {/* Save All Action */}
@@ -2538,125 +2534,8 @@ function AdminDashboard() {
                                                             </div>
                                                         </div>
 
-                                                        {/* Row 1: Quick Coins Helper Presets */}
-                                                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px", paddingTop: "10px", borderTop: "1px solid rgba(255, 255, 255, 0.06)" }}>
-                                                            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                                                                <span style={{ fontSize: "12px", color: "var(--accent-gold)", fontWeight: "700" }}>🪙 Quick Set Coins:</span>
-                                                                {[15, 20, 25, 30, 40, 50].map((num) => (
-                                                                    <button
-                                                                        key={num}
-                                                                        type="button"
-                                                                        onClick={() => handleSetAllCoinsInView(filteredQuestionList, num)}
-                                                                        className="btn-secondary"
-                                                                        style={{ padding: "4px 9px", fontSize: "11px", fontWeight: "700" }}
-                                                                        title={`Set all ${filteredQuestionList.length} questions to ${num} coins`}
-                                                                    >
-                                                                        🪙 {num}
-                                                                    </button>
-                                                                ))}
-
-                                                                <span style={{ color: "rgba(255, 255, 255, 0.2)", margin: "0 4px" }}>|</span>
-
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleAdjustAllCoinsInView(filteredQuestionList, 5)}
-                                                                    className="btn-secondary"
-                                                                    style={{ padding: "4px 9px", fontSize: "11px", color: "#34d399", borderColor: "rgba(52, 211, 153, 0.3)" }}
-                                                                    title="Add +5 coins to every question"
-                                                                >
-                                                                    +5 to All
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleAdjustAllCoinsInView(filteredQuestionList, -5)}
-                                                                    className="btn-secondary"
-                                                                    style={{ padding: "4px 9px", fontSize: "11px", color: "#fb7185", borderColor: "rgba(251, 113, 133, 0.3)" }}
-                                                                    title="Subtract 5 coins from every question"
-                                                                >
-                                                                    -5 to All
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleApplyEscalatingLadderInView(filteredQuestionList)}
-                                                                    className="btn-secondary"
-                                                                    style={{ padding: "4px 9px", fontSize: "11px", color: "var(--accent-gold)", borderColor: "rgba(255, 215, 0, 0.3)" }}
-                                                                    title="Set increasing difficulty ladder: 10, 15, 20, 25, 30, 35, 40, 45, 50, 60"
-                                                                >
-                                                                    📈 Escalating Ladder (10→50+)
-                                                                </button>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Row 2: Quick Timing Helper Presets */}
-                                                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px", paddingTop: "10px", borderTop: "1px solid rgba(255, 255, 255, 0.06)" }}>
-                                                            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                                                                <span style={{ fontSize: "12px", color: "var(--primary)", fontWeight: "700" }}>⏱️ Quick Set Timing:</span>
-                                                                {[10, 12, 15, 20, 25, 30, 45, 60].map((tSec) => (
-                                                                    <button
-                                                                        key={tSec}
-                                                                        type="button"
-                                                                        onClick={() => handleSetAllTimeInView(filteredQuestionList, tSec)}
-                                                                        className="btn-secondary"
-                                                                        style={{ padding: "4px 9px", fontSize: "11px", fontWeight: "700" }}
-                                                                        title={`Set all ${filteredQuestionList.length} questions to ${tSec} seconds`}
-                                                                    >
-                                                                        ⏱️ {tSec}s
-                                                                    </button>
-                                                                ))}
-
-                                                                <span style={{ color: "rgba(255, 255, 255, 0.2)", margin: "0 4px" }}>|</span>
-
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleAdjustAllTimeInView(filteredQuestionList, 2)}
-                                                                    className="btn-secondary"
-                                                                    style={{ padding: "4px 9px", fontSize: "11px", color: "#67e8f9", borderColor: "rgba(103, 232, 249, 0.3)" }}
-                                                                    title="Add +2s to every question"
-                                                                >
-                                                                    +2s to All
-                                                                </button>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => handleAdjustAllTimeInView(filteredQuestionList, -2)}
-                                                                    className="btn-secondary"
-                                                                    style={{ padding: "4px 9px", fontSize: "11px", color: "#fb7185", borderColor: "rgba(251, 113, 133, 0.3)" }}
-                                                                    title="Subtract 2s from every question"
-                                                                >
-                                                                    -2s to All
-                                                                </button>
-
-                                                                <span style={{ color: "rgba(255, 255, 255, 0.2)", margin: "0 4px" }}>|</span>
-
-                                                                {/* Custom Time Input & Apply */}
-                                                                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                                                    <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>Custom:</span>
-                                                                    <input
-                                                                        type="number"
-                                                                        min="3"
-                                                                        max="300"
-                                                                        value={bulkCustomTime}
-                                                                        onChange={(e) => setBulkCustomTime(e.target.value)}
-                                                                        style={{
-                                                                            width: "60px",
-                                                                            padding: "3px 6px",
-                                                                            fontSize: "12px",
-                                                                            fontWeight: "800",
-                                                                            textAlign: "center",
-                                                                            fontFamily: "var(--font-mono)",
-                                                                        }}
-                                                                    />
-                                                                    <span style={{ fontSize: "11px", color: "var(--text-dim)" }}>s</span>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => handleSetAllTimeInView(filteredQuestionList, bulkCustomTime)}
-                                                                        className="btn-secondary"
-                                                                        style={{ padding: "4px 10px", fontSize: "11px", fontWeight: "700", color: "var(--primary)", borderColor: "rgba(0, 240, 255, 0.3)" }}
-                                                                    >
-                                                                        Apply to All
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-
+                                                        {/* Row 2: Unsaved Changes Warning */}
+                                                        <div style={{ paddingTop: "10px", borderTop: "1px solid rgba(255, 255, 255, 0.06)" }}>
                                                             {hasUnsavedChanges && (
                                                                 <span style={{ fontSize: "12px", color: "var(--accent-gold)", fontWeight: "600" }}>
                                                                     ⚠️ You have modified questions. Click "Save All Changes" to save!
@@ -2835,28 +2714,7 @@ function AdminDashboard() {
                                                                                     }}
                                                                                 />
 
-                                                                                {/* Quick preset buttons */}
-                                                                                <div style={{ display: "flex", gap: "4px" }}>
-                                                                                    {[10, 15, 20, 25, 30, 40, 50].map((pVal) => (
-                                                                                        <button
-                                                                                            key={pVal}
-                                                                                            type="button"
-                                                                                            onClick={() => handleBulkDraftChange(q._id, "techCoins", pVal)}
-                                                                                            style={{
-                                                                                                padding: "3px 7px",
-                                                                                                borderRadius: "5px",
-                                                                                                fontSize: "11px",
-                                                                                                fontWeight: "700",
-                                                                                                background: draftCoins === pVal ? "var(--accent-gold)" : "rgba(255, 255, 255, 0.04)",
-                                                                                                color: draftCoins === pVal ? "#000" : "var(--text-muted)",
-                                                                                                border: "1px solid rgba(255, 255, 255, 0.08)",
-                                                                                                cursor: "pointer",
-                                                                                            }}
-                                                                                        >
-                                                                                            {pVal}
-                                                                                        </button>
-                                                                                    ))}
-                                                                                </div>
+
                                                                             </div>
 
                                                                             {/* Timer & Single Save Control */}

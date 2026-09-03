@@ -393,15 +393,7 @@ function ParticipantDashboard() {
                                 
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                     {r1g1Session.status === "completed" ? (
-                                        eventStatus?.quizAnswersVisible ? (
-                                            <button
-                                                className="btn-secondary"
-                                                onClick={() => openReviewModal(1, 1, "Round 1 Game 1: Technical Quiz")}
-                                                style={{ width: "100%", padding: "10px", fontSize: "13px", borderColor: "#34d399", color: "#34d399" }}
-                                            >
-                                                Check Quiz Answers 📝
-                                            </button>
-                                        ) : (
+                                        false ? (null) : (
                                             <div style={{ padding: "10px", fontSize: "13px", textAlign: "center", color: "var(--text-dim)", background: "rgba(255, 255, 255, 0.03)", borderRadius: "8px" }}>
                                                 ✅ Completed
                                             </div>
@@ -415,15 +407,7 @@ function ParticipantDashboard() {
                                             >
                                                 {r1g1Session.status === "running" ? "Resume Technical Quiz →" : "Start Technical Quiz →"}
                                             </button>
-                                            {eventStatus?.quizAnswersVisible && (r1g1Session.hasPreviousAnswers || team.round1?.game1Score > 0) && (
-                                                <button
-                                                    className="btn-secondary"
-                                                    onClick={() => openReviewModal(1, 1, "Round 1 Game 1: Technical Quiz")}
-                                                    style={{ width: "100%", padding: "8px", fontSize: "12px", borderColor: "rgba(52, 211, 153, 0.4)", color: "#34d399" }}
-                                                >
-                                                    Check Quiz Answers 📝
-                                                </button>
-                                            )}
+                                            
                                         </>
                                     )}
                                 </div>
@@ -454,15 +438,7 @@ function ParticipantDashboard() {
                                 
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                     {r1g3Session.status === "completed" ? (
-                                        eventStatus?.quizAnswersVisible ? (
-                                            <button
-                                                className="btn-secondary"
-                                                onClick={() => openReviewModal(3, 1, "Round 1 Game 3: Code Output & Debugging")}
-                                                style={{ width: "100%", padding: "10px", fontSize: "13px", borderColor: "#34d399", color: "#34d399" }}
-                                            >
-                                                Check Code Answers 📝
-                                            </button>
-                                        ) : (
+                                        false ? (null) : (
                                             <div style={{ padding: "10px", fontSize: "13px", textAlign: "center", color: "var(--text-dim)", background: "rgba(255, 255, 255, 0.03)", borderRadius: "8px" }}>
                                                 ✅ Completed
                                             </div>
@@ -570,15 +546,7 @@ function ParticipantDashboard() {
                                 
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                     {r4g1Session.status === "completed" ? (
-                                        eventStatus?.quizAnswersVisible ? (
-                                            <button
-                                                className="btn-secondary"
-                                                onClick={() => openReviewModal(1, 4, "Round 4 Game 1: Jumbled Words")}
-                                                style={{ width: "100%", padding: "10px", fontSize: "13px", borderColor: "#34d399", color: "#34d399" }}
-                                            >
-                                                Check Word Answers 📝
-                                            </button>
-                                        ) : (
+                                        false ? (null) : (
                                             <div style={{ padding: "10px", fontSize: "13px", textAlign: "center", color: "var(--text-dim)", background: "rgba(255, 255, 255, 0.03)", borderRadius: "8px" }}>
                                                 ✅ Completed
                                             </div>
