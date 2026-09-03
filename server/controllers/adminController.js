@@ -615,13 +615,13 @@ const deleteTeam = async (req, res) => {
 // ============================================================
 const getAdminBootstrap = async (req, res) => {
     try {
-        const [teams, settingsDoc, sets, rawCards, rawStatements, questions] = await Promise.all([
+        const [teams, settingsDoc, setsMeta, rawCards, rawStatements, questions] = await Promise.all([
             Team.find()
                 .populate("leader", "name email registerNumber")
                 .sort({ rank: 1, finalScore: -1, createdAt: 1 })
                 .lean(),
             EventSettings.findOne().lean(),
-            ImageSet.find().sort({ setNumber: 1 }).lean(),
+            ImageSet.find().select("-questions.images").sort({ setNumber: 1 }).lean(),
             TechCard.find().sort({ name: 1 }).lean(),
             ProblemStatement.find().sort({ statementNumber: 1 }).lean(),
             Question.find().sort({ game: 1, round: 1, questionNumber: 1 }).lean(),
@@ -682,8 +682,8 @@ const getAdminBootstrap = async (req, res) => {
         return res.status(200).json({
             teams: teams || [],
             settings: settings || {},
-            sets: sets || [],
-            imageSets: sets || [],
+            sets: setsMeta || [],
+            imageSets: setsMeta || [],
             cards: cards || [],
             techCards: cards || [],
             statements: statements || [],

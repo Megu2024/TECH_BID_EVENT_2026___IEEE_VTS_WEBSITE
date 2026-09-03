@@ -2,6 +2,7 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const compression = require("compression");
 const mongoose = require("mongoose");
 const connectDB = require("./config/db");
 
@@ -15,6 +16,8 @@ const gameRoutes = require("./routes/gameRoutes");
 const catalogRoutes = require("./routes/catalogRoutes");
 
 const app = express();
+
+app.use(compression());
 
 // Flexible CORS for local development and public production URLs
 const allowedOrigins = process.env.CLIENT_URL

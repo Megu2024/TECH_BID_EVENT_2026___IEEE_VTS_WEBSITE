@@ -237,6 +237,16 @@ function AdminDashboard() {
         }
     }, [editingImageSetNumber, imageSets]);
 
+    // On-demand full image set loading when visiting Arena or Content ImageSets tab
+    useEffect(() => {
+        if (activeTab === "r1g2_arena" || (activeTab === "content" && contentSubTab === "imagesets")) {
+            const hasFullImages = imageSets.some((s) => s.questions?.some((q) => q.images && q.images.length > 0));
+            if (!hasFullImages) {
+                refreshImageSets();
+            }
+        }
+    }, [activeTab, contentSubTab]);
+
     // Random PIN Generator Helper
     const generateRandomPin = (field) => {
         const pin = Math.floor(1000 + Math.random() * 9000).toString();
