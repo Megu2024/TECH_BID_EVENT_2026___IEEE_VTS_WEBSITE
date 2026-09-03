@@ -1,4 +1,4 @@
-const getApiBaseUrl = () => {
+export const getApiBaseUrl = () => {
     if (import.meta.env.VITE_API_URL) {
         return import.meta.env.VITE_API_URL.replace(/\/+$/, "");
     }
@@ -8,7 +8,7 @@ const getApiBaseUrl = () => {
     return "http://localhost:5000";
 };
 
-const API_BASE_URL = getApiBaseUrl();
+export const API_BASE_URL = getApiBaseUrl();
 
 const getHeaders = (includeAuth = true) => {
     const headers = {

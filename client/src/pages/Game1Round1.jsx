@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { API_BASE_URL } from "../services/api";
 import "./Game1Round1.css";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = `${API_BASE_URL}/api`;
 
 function Game1Round1() {
     const [gameStarted, setGameStarted] = useState(false);
