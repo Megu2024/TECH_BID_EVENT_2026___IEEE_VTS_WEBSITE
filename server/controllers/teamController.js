@@ -14,6 +14,7 @@ const getMyTeam = async (req, res) => {
                 team: null,
                 message: "You are not part of any team yet",
                 leaderboardVisible: false,
+                quizAnswersVisible: false,
             });
         }
 
@@ -26,11 +27,13 @@ const getMyTeam = async (req, res) => {
                 team: null,
                 message: "No team registered yet",
                 leaderboardVisible: false,
+                quizAnswersVisible: false,
             });
         }
 
         const settings = await EventSettings.findOne();
         const leaderboardVisible = settings ? settings.leaderboardVisible : false;
+        const quizAnswersVisible = settings ? settings.quizAnswersVisible : false;
 
         const teamObj = team.toObject();
         if (!leaderboardVisible) {
@@ -40,6 +43,7 @@ const getMyTeam = async (req, res) => {
         return res.status(200).json({
             team: teamObj,
             leaderboardVisible,
+            quizAnswersVisible,
         });
     } catch (error) {
         console.error("Get team error:", error);

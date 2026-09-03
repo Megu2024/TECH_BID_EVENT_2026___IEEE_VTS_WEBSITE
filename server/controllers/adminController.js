@@ -547,6 +547,38 @@ const toggleLeaderboardVisibility = async (req, res) => {
 };
 
 // ============================================================
+// TOGGLE QUIZ ANSWERS VISIBILITY
+// ============================================================
+const toggleQuizAnswersVisibility = async (req, res) => {
+    try {
+        const { quizAnswersVisible } = req.body;
+
+        let settings = await EventSettings.findOne();
+        if (!settings) {
+            settings = new EventSettings();
+        }
+
+        if (quizAnswersVisible !== undefined) {
+            settings.quizAnswersVisible = Boolean(quizAnswersVisible);
+        } else {
+            settings.quizAnswersVisible = !settings.quizAnswersVisible;
+        }
+
+        await settings.save();
+
+        return res.status(200).json({
+            message: `Quiz answers visibility updated to ${settings.quizAnswersVisible ? "Visible" : "Hidden"}`,
+            quizAnswersVisible: settings.quizAnswersVisible,
+        });
+    } catch (error) {
+        console.error("Toggle quiz answers error:", error);
+        return res.status(500).json({
+            message: "Server error while updating quiz answers visibility",
+        });
+    }
+};
+
+// ============================================================
 // DELETE TEAM PERMANENTLY (Admin Only)
 // Removes team, all member/leader user accounts, game sessions, and answers
 // ============================================================
@@ -713,4 +745,5 @@ module.exports = {
     scoreRound5FinalEvaluation,
     triggerRecalculateRanks,
     toggleLeaderboardVisibility,
+    toggleQuizAnswersVisibility,
 };

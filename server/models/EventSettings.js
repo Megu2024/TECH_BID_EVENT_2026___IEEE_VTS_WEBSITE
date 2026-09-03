@@ -69,6 +69,12 @@ const eventSettingsSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+
+        // Allow participants to view correct answers for quizzes
+        quizAnswersVisible: {
+            type: Boolean,
+            default: false,
+        },
     },
     {
         timestamps: true,

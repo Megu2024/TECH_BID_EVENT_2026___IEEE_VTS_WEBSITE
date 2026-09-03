@@ -1699,6 +1699,32 @@ function AdminDashboard() {
                             </div>
                         </div>
 
+                        {/* Quiz Answers Visibility Control */}
+                        <div className="glass-card" style={{ padding: "28px" }}>
+                            <span className="badge badge-purple" style={{ marginBottom: "10px" }}>PARTICIPANT QUIZ</span>
+                            <h3 style={{ fontSize: "20px", marginBottom: "6px" }}>Answers Visibility</h3>
+                            <p style={{ fontSize: "13px", color: "var(--text-muted)", marginBottom: "20px" }}>
+                                Control whether participants can view correct quiz answers after completion
+                            </p>
+
+                            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                    <span style={{ fontSize: "14px", fontWeight: "600" }}>Current Status:</span>
+                                    <span className={settings.quizAnswersVisible ? "badge badge-emerald" : "badge badge-red"}>
+                                        {settings.quizAnswersVisible ? "ANSWERS VISIBLE" : "ANSWERS HIDDEN"}
+                                    </span>
+                                </div>
+
+                                <button
+                                    className={settings.quizAnswersVisible ? "btn-secondary" : "btn-primary"}
+                                    onClick={() => handleUpdateSettings({ quizAnswersVisible: !settings.quizAnswersVisible })}
+                                    disabled={actionLoading}
+                                >
+                                    {settings.quizAnswersVisible ? "Hide Quiz Answers" : "Enable Quiz Answers 📝"}
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
                 )}
 

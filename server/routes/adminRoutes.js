@@ -15,6 +15,7 @@ const {
     scoreRound5FinalEvaluation,
     triggerRecalculateRanks,
     toggleLeaderboardVisibility,
+    toggleQuizAnswersVisibility,
 } = require("../controllers/adminController");
 
 const router = express.Router();
@@ -39,5 +40,6 @@ router.post("/score/final-evaluation", protectAdmin, scoreRound5FinalEvaluation)
 // Rankings & Controls
 router.post("/recalculate-ranks", protectAdmin, triggerRecalculateRanks);
 router.post("/toggle-leaderboard", protectAdmin, toggleLeaderboardVisibility);
+router.post("/toggle-quiz-answers", protectAdmin, toggleQuizAnswersVisibility);
 
 module.exports = router;

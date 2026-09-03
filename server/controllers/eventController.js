@@ -34,6 +34,7 @@ const updateEventSettings = async (req, res) => {
             quizEnabled,
             quizPin,
             leaderboardVisible,
+            quizAnswersVisible,
         } = req.body;
 
         let settings = await EventSettings.findOne();
@@ -88,6 +89,7 @@ const updateEventSettings = async (req, res) => {
         }
 
         if (leaderboardVisible !== undefined) settings.leaderboardVisible = Boolean(leaderboardVisible);
+        if (quizAnswersVisible !== undefined) settings.quizAnswersVisible = Boolean(quizAnswersVisible);
 
         await settings.save();
 
@@ -121,6 +123,7 @@ const getParticipantEventStatus = async (req, res) => {
             r4g1Enabled: settings.r4g1Enabled,
             r4g1Version: settings.r4g1Version || 1,
             leaderboardVisible: settings.leaderboardVisible,
+            quizAnswersVisible: settings.quizAnswersVisible,
         });
     } catch (error) {
         console.error("Get participant event status error:", error);

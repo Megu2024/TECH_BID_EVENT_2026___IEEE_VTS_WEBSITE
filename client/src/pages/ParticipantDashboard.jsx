@@ -365,13 +365,19 @@ function ParticipantDashboard() {
                                 
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                     {r1g1Session.status === "completed" ? (
-                                        <button
-                                            className="btn-secondary"
-                                            onClick={() => openReviewModal(1, 1, "Round 1 Game 1: Technical Quiz")}
-                                            style={{ width: "100%", padding: "10px", fontSize: "13px", borderColor: "#34d399", color: "#34d399" }}
-                                        >
-                                            Check Quiz Answers 📝
-                                        </button>
+                                        eventStatus?.quizAnswersVisible ? (
+                                            <button
+                                                className="btn-secondary"
+                                                onClick={() => openReviewModal(1, 1, "Round 1 Game 1: Technical Quiz")}
+                                                style={{ width: "100%", padding: "10px", fontSize: "13px", borderColor: "#34d399", color: "#34d399" }}
+                                            >
+                                                Check Quiz Answers 📝
+                                            </button>
+                                        ) : (
+                                            <div style={{ padding: "10px", fontSize: "13px", textAlign: "center", color: "var(--text-dim)", background: "rgba(255, 255, 255, 0.03)", borderRadius: "8px" }}>
+                                                ✅ Completed
+                                            </div>
+                                        )
                                     ) : (
                                         <>
                                             <button
@@ -381,7 +387,7 @@ function ParticipantDashboard() {
                                             >
                                                 {r1g1Session.status === "running" ? "Resume Technical Quiz →" : "Start Technical Quiz →"}
                                             </button>
-                                            {(r1g1Session.hasPreviousAnswers || team.round1?.game1Score > 0) && (
+                                            {eventStatus?.quizAnswersVisible && (r1g1Session.hasPreviousAnswers || team.round1?.game1Score > 0) && (
                                                 <button
                                                     className="btn-secondary"
                                                     onClick={() => openReviewModal(1, 1, "Round 1 Game 1: Technical Quiz")}
@@ -420,13 +426,19 @@ function ParticipantDashboard() {
                                 
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                     {r1g3Session.status === "completed" ? (
-                                        <button
-                                            className="btn-secondary"
-                                            onClick={() => openReviewModal(3, 1, "Round 1 Game 3: Code Output & Debugging")}
-                                            style={{ width: "100%", padding: "10px", fontSize: "13px", borderColor: "#34d399", color: "#34d399" }}
-                                        >
-                                            Check Code Answers 📝
-                                        </button>
+                                        eventStatus?.quizAnswersVisible ? (
+                                            <button
+                                                className="btn-secondary"
+                                                onClick={() => openReviewModal(3, 1, "Round 1 Game 3: Code Output & Debugging")}
+                                                style={{ width: "100%", padding: "10px", fontSize: "13px", borderColor: "#34d399", color: "#34d399" }}
+                                            >
+                                                Check Code Answers 📝
+                                            </button>
+                                        ) : (
+                                            <div style={{ padding: "10px", fontSize: "13px", textAlign: "center", color: "var(--text-dim)", background: "rgba(255, 255, 255, 0.03)", borderRadius: "8px" }}>
+                                                ✅ Completed
+                                            </div>
+                                        )
                                     ) : (
                                         <>
                                             <button
@@ -436,7 +448,7 @@ function ParticipantDashboard() {
                                             >
                                                 {r1g3Session.status === "running" ? "Resume Code Challenge →" : "Start Code Challenge →"}
                                             </button>
-                                            {(r1g3Session.hasPreviousAnswers || team.round1?.game3Score > 0) && (
+                                            {eventStatus?.quizAnswersVisible && (r1g3Session.hasPreviousAnswers || team.round1?.game3Score > 0) && (
                                                 <button
                                                     className="btn-secondary"
                                                     onClick={() => openReviewModal(3, 1, "Round 1 Game 3: Code Output & Debugging")}
@@ -530,13 +542,19 @@ function ParticipantDashboard() {
                                 
                                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                     {r4g1Session.status === "completed" ? (
-                                        <button
-                                            className="btn-secondary"
-                                            onClick={() => openReviewModal(1, 4, "Round 4 Game 1: Jumbled Words")}
-                                            style={{ width: "100%", padding: "10px", fontSize: "13px", borderColor: "#34d399", color: "#34d399" }}
-                                        >
-                                            Check Word Answers 📝
-                                        </button>
+                                        eventStatus?.quizAnswersVisible ? (
+                                            <button
+                                                className="btn-secondary"
+                                                onClick={() => openReviewModal(1, 4, "Round 4 Game 1: Jumbled Words")}
+                                                style={{ width: "100%", padding: "10px", fontSize: "13px", borderColor: "#34d399", color: "#34d399" }}
+                                            >
+                                                Check Word Answers 📝
+                                            </button>
+                                        ) : (
+                                            <div style={{ padding: "10px", fontSize: "13px", textAlign: "center", color: "var(--text-dim)", background: "rgba(255, 255, 255, 0.03)", borderRadius: "8px" }}>
+                                                ✅ Completed
+                                            </div>
+                                        )
                                     ) : (
                                         <>
                                             <button
@@ -546,7 +564,7 @@ function ParticipantDashboard() {
                                             >
                                                 {r4g1Session.status === "running" ? "Resume Jumbled Words →" : "Start Jumbled Words →"}
                                             </button>
-                                            {(r4g1Session.hasPreviousAnswers || team.round4?.game1Score > 0) && (
+                                            {eventStatus?.quizAnswersVisible && (r4g1Session.hasPreviousAnswers || team.round4?.game1Score > 0) && (
                                                 <button
                                                     className="btn-secondary"
                                                     onClick={() => openReviewModal(1, 4, "Round 4 Game 1: Jumbled Words")}
@@ -596,7 +614,11 @@ function ParticipantDashboard() {
                                 <div style={{ fontSize: "16px", fontWeight: "700", color: "#fff", marginTop: "8px" }}>
                                     {team.problemStatement || team.round5?.problemStatement || "⏳ Bidding in progress during Round 5 Auction"}
                                 </div>
-                                
+                                {team.round5?.auctionCoinsSpent > 0 && (
+                                    <div style={{ marginTop: "12px", fontSize: "12px", color: "var(--text-dim)", background: "rgba(255,255,255,0.03)", padding: "8px", borderRadius: "8px" }}>
+                                        Coins Spent in Auction: <strong style={{ color: "var(--accent-red)" }}>- 🪙{team.round5.auctionCoinsSpent}</strong>
+                                    </div>
+                                )}
                             </div>
 
                             <div style={{ padding: "20px", borderRadius: "12px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid rgba(255, 255, 255, 0.06)" }}>
