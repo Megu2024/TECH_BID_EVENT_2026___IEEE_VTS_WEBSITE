@@ -40,8 +40,28 @@ function AdminDashboard() {
 
     const loadAllData = useCallback(async () => {
         try {
-            setLoading(true);
+            // Optimistic fast-load from localStorage
+            const cachedData = localStorage.getItem('adminBootstrapCache');
+            if (cachedData) {
+                try {
+                    const parsed = JSON.parse(cachedData);
+                    setTeams(parsed.teams || []);
+                    setSettings(parsed.settings || {});
+                    setImageSets(parsed.imageSets || []);
+                    setCardsCatalog(parsed.cardsCatalog || []);
+                    setProblemCatalog(parsed.problemCatalog || []);
+                    setQuestions(parsed.questions || []);
+                    setLoading(false); // Instantly remove loading screen
+                } catch(e) {}
+            } else {
+                setLoading(true);
+            }
+
             const data = await api.getAdminBootstrap();
+            
+            // Cache the fresh data
+            localStorage.setItem('adminBootstrapCache', JSON.stringify(data));
+
             setTeams(data.teams || []);
             setSettings(data.settings || {});
             
